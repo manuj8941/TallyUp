@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="theme-color" content="#0ea5a4">
+        <meta name="description" content="Employee attendance tracking system">
+        <link rel="manifest" href="/manifest.json">
+        <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+        <link rel="apple-touch-icon" href="/icons/icon-192.png">
+        <title>Team Management</title>
+
+        <link rel="stylesheet" href="/mobile.css">
+        <link rel="stylesheet" href="/flatpickr.min.css">
+        <link rel="stylesheet" href="/airbnb.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+        <!-- Apply branding color immediately to prevent flash -->
+        <script>
+            ( function ()
+            {
+                // Apply cached color instantly (synchronous)
+                const cached = localStorage.getItem( 'brandColor' );
+                if ( cached )
+                {
+                    document.documentElement.style.setProperty( '--brand-color', cached );
+                    document.documentElement.style.setProperty( '--accent', cached );
+                    // Update meta theme-color
+                    const metaTheme = document.querySelector( 'meta[name="theme-color"]' );
+                    if ( metaTheme ) metaTheme.setAttribute( 'content', cached );
+                }
+
+                // Fetch and update cache (async, non-blocking)
+                fetch( '/branding' ).then( res => res.json() ).then( data =>
+                {
+                    if ( data.brandColor )
+                    {
+                        localStorage.setItem( 'brandColor', data.brandColor );
+                        if ( data.brandColor !== cached )
+                        {
+                            document.documentElement.style.setProperty( '--brand-color', data.brandColor );
+                            document.documentElement.style.setProperty( '--accent', data.brandColor );
+                            // Update meta theme-color
+                            const metaTheme = document.querySelector( 'meta[name="theme-color"]' );
+                            if ( metaTheme ) metaTheme.setAttribute( 'content', data.brandColor );
+                        }
+                    }
+                } ).catch( () => { } );
+            } )();
+        </script>
+
+    </head>
+
+    <body>
+        <div class="container">
+            <h1 style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                <i class="fas fa-user-shield"></i> Team Management
+                <img class="nav-avatar" id="header-avatar" src="/default-avatar.svg" alt="Profile"
+                    style="display:none;margin-left:auto">
+                <span style="font-size:0.9rem;font-weight:normal">
+                    Welcome, <strong id="profile-name"></strong>! (<span id="profile-role"></span>)
+                </span>
+            </h1>
+            <p style="color:#666;font-size:0.9rem;margin-top:4px;">
+                <i class="fas fa-calendar-day"></i> <span id="current-datetime"></span>
+            </p>
+
+            <!-- Owner settings accessible from App Settings -->
+            <!-- Test Date Override was moved to App Settings page -->
+
+            <!-- Section for Leave Request Management -->
+            <div class="section">
+                <h2><i class="fas fa-tasks"></i> Requests Waiting for You</h2>
+                <div class="table-wrap">
+                    <table id="leave-requests-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Type</th>
+                                <th>Reason</th>
+                                <th>Action</th>
+                                <th>Flags</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leave-requests-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Section for All Leaves History -->
+            <div class="section">
+                <h2><i class="fas fa-history"></i> Complete Time Off History</h2>
+                <div class="table-wrap">
+                    <table id="all-leaves-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Type</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Actioned By</th>
+                            </tr>
+                        </thead>
+                        <tbody id="all-leaves-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Section for Viewing Employee Attendance -->
+            <div class="section">
+                <h2><i class="fas fa-user-plus"></i> Add Team Member</h2>
+                <form id="add-user-form">
+                    <label for="new-username"><i class="fas fa-user"></i> Username:</label>
+                    <input type="text" id="new-username" name="name" required pattern="[A-Za-z.\-_\s]+">
+                    <br>
+                    <label for="new-password"><i class="fas fa-key"></i> Password (optional, default 111):</label>
+                    <input type="password" id="new-password" name="password" placeholder="111">
+                    <br>
+                    <label for="new-role"><i class="fas fa-user-tag"></i> Role:</label>
+                    <select id="new-role" name="role">
+                        <option value="employee">Employee</option>
+                        <option value="manager">Manager</option>
+                        <option value="owner">Owner</option>
+                    </select>
+                    <br>
+                    <label for="new-join-date"><i class="fas fa-calendar"></i> Join Date (optional, defaults to
+                        today):</label>
+                    <input type="date" id="new-join-date" name="join_date">
+                    <br>
+                    <button type="submit"><i class="fas fa-user-plus"></i> Add Member</button>
+                </form>
+                <hr>
+                <h2><i class="fas fa-key"></i> Reset Team Passwords</h2>
+                <form id="reset-password-form">
+                    <label>Reset Target:</label>
+                    <br>
+                    <select id="reset-target" name="reset_target">
+                        <option value="">-- Choose a team member... --</option>
+                        <!-- specific users will be appended here -->
+                    </select>
+                    <br>
+                    <label for="reset-password">New password (optional, default 111):</label>
+                    <input type="password" id="reset-password" name="password" placeholder="111">
+                    <br>
+                    <button type="submit"><i class="fas fa-key"></i> Reset Password</button>
+                </form>
+                <hr>
+                <h2><i class="fas fa-eye"></i> Team Check-In Records</h2>
+                <label for="user-select">Select Employee:</label>
+                <select id="user-select"></select>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>In Time</th>
+                                <th>In Location</th>
+                                <th>In Selfie</th>
+                                <th>Out Time</th>
+                                <th>Out Location</th>
+                                <th>Out Selfie</th>
+                                <th>Total Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-viewer-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Spacer to ensure content clears bottom navbar -->
+            <div class="bottom-spacer"></div>
+        </div>
+
+        <script>
+            let currentUser;
+
+            window.addEventListener( 'load', async () =>
+            {
+                // Fetch current admin's info
+                const userRes = await fetch( '/user/me' );
+                currentUser = await userRes.json();
+                document.getElementById( 'profile-name' ).textContent = currentUser.displayName || currentUser.name;
+                document.getElementById( 'profile-role' ).textContent = currentUser.role.replace( '_', ' ' );
+
+                // Apply branding (logo and avatar)
+                if ( window.applyBranding ) window.applyBranding();
+
+                // Get timezone from user data
+                const timezone = currentUser.timezone || 'Asia/Kolkata';
+
+                // Display current date and time using server's effective date and time
+                function updateDateTime ()
+                {
+                    // Re-fetch user data to get current server time
+                    fetch( '/user/me' )
+                        .then( res => res.json() )
+                        .then( data =>
+                        {
+                            // Parse server's current datetime
+                            const serverTime = new Date( data.currentDateTime );
+
+                            const options = {
+                                timeZone: timezone,
+                                weekday: 'long',
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                hour12: true
+                            };
+                            const formatter = new Intl.DateTimeFormat( 'en-GB', options );
+                            const parts = formatter.formatToParts( serverTime );
+
+                            const weekday = parts.find( p => p.type === 'weekday' ).value;
+                            const day = parts.find( p => p.type === 'day' ).value;
+                            const month = parts.find( p => p.type === 'month' ).value;
+                            const year = parts.find( p => p.type === 'year' ).value;
+                            const hour = parts.find( p => p.type === 'hour' ).value;
+                            const minute = parts.find( p => p.type === 'minute' ).value;
+                            const dayPeriod = parts.find( p => p.type === 'dayPeriod' );
+                            const ampm = dayPeriod ? dayPeriod.value.toUpperCase() : '';
+
+                            // Get timezone abbreviation or UTC offset
+                            let tzAbbr = '';
+                            try
+                            {
+                                const tzString = serverTime.toLocaleString( 'en-US', { timeZone: timezone, timeZoneName: 'short' } );
+                                const match = tzString.match( /\b([A-Z]{2,5})\b$/ );
+                                if ( match ) tzAbbr = match[ 1 ];
+                            } catch ( e ) { /* detection failed */ }
+
+                            // If detection failed, show UTC offset (e.g., UTC+5:30)
+                            if ( !tzAbbr )
+                            {
+                                const offsetMinutes = -serverTime.getTimezoneOffset();
+                                const offsetHours = Math.floor( Math.abs( offsetMinutes ) / 60 );
+                                const offsetMins = Math.abs( offsetMinutes ) % 60;
+                                const sign = offsetMinutes >= 0 ? '+' : '-';
+                                tzAbbr = `UTC${ sign }${ offsetHours }${ offsetMins > 0 ? ':' + String( offsetMins ).padStart( 2, '0' ) : '' }`;
+                            }
+
+                            const dateTimeString = `Today is ${ weekday }, ${ day }-${ month }-${ year } (${ tzAbbr }), ${ hour }:${ minute } ${ ampm }`;
+                            document.getElementById( 'current-datetime' ).textContent = dateTimeString;
+                        } )
+                        .catch( err =>
+                        {
+                            console.error( 'Error fetching server time:', err );
+                        } );
+                }
+
+                // Initial update and set interval to update every minute
+                updateDateTime();
+                setInterval( updateDateTime, 60000 );
+
+                // Load all necessary data
+                await loadLeaveRequests();
+                await loadAllLeaves();
+                await populateUserDropdown();
+                setupAddUserForm();
+            } );
+
+
+
+            function setupAddUserForm ()
+            {
+                const form = document.getElementById( 'add-user-form' );
+                const roleSelect = document.getElementById( 'new-role' );
+                // If the current admin is a manager, remove owner and manager options
+                if ( currentUser && currentUser.role === 'manager' )
+                {
+                    const ownerOption = roleSelect.querySelector( 'option[value="owner"]' );
+                    if ( ownerOption ) ownerOption.remove();
+                    const managerOption = roleSelect.querySelector( 'option[value="manager"]' );
+                    if ( managerOption ) managerOption.remove();
+
+                    // If only one role (employee) remains, replace the dropdown with a fixed label + hidden input
+                    // to avoid showing a useless single-value select to managers.
+                    const remainingOptions = Array.from( roleSelect.options ).map( o => o.value );
+                    if ( remainingOptions.length === 1 )
+                    {
+                        const parent = roleSelect.parentNode;
+                        const wrapper = document.createElement( 'div' );
+                        // keep the existing label ("Role:"), so show only the capitalized role name here
+                        wrapper.innerHTML = `<input type="hidden" id="new-role-hidden" name="role" value="${ remainingOptions[ 0 ] }"><span>${ remainingOptions[ 0 ].charAt( 0 ).toUpperCase() + remainingOptions[ 0 ].slice( 1 ) }</span>`;
+                        parent.replaceChild( wrapper, roleSelect );
+                    }
+                }
+                form.addEventListener( 'submit', async ( e ) =>
+                {
+                    e.preventDefault();
+                    const name = document.getElementById( 'new-username' ).value.trim();
+                    const password = document.getElementById( 'new-password' ).value;
+                    const roleEl = document.getElementById( 'new-role' );
+                    const hiddenRoleEl = document.getElementById( 'new-role-hidden' );
+                    const role = roleEl ? roleEl.value : ( hiddenRoleEl ? hiddenRoleEl.value : 'employee' );
+                    const join_date = document.getElementById( 'new-join-date' ).value;
+
+                    try
+                    {
+                        const res = await fetch( '/admin/users/add', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify( { name, password, role, join_date } )
+                        } );
+
+                        const result = await res.json();
+                        if ( res.ok && result.success )
+                        {
+                            showAppModal( result.message || 'User created successfully.', 'success' );
+                            form.reset();
+                            populateUserDropdown();
+                        } else
+                        {
+                            showAppModal( result.message || 'Could not create the user. Please try again.', 'error' );
+                        }
+                    } catch ( err )
+                    {
+                        console.error( 'Error adding user:', err );
+                        showAppModal( 'An error occurred while creating the user. Please try again.', 'error' );
+                    }
+                } );
+
+                // Test Date Override moved to App Settings; nothing to initialize here.
+
+                // Reset passwords handler
+                const resetForm = document.getElementById( 'reset-password-form' );
+                resetForm.addEventListener( 'submit', async ( e ) =>
+                {
+                    e.preventDefault();
+                    const password = document.getElementById( 'reset-password' ).value;
+                    const target = document.getElementById( 'reset-target' ).value;
+
+                    if ( !target )
+                    {
+                        showAppModal( 'Please choose a user to reset.', 'error' );
+                        return;
+                    }
+
+                    try
+                    {
+                        const res = await fetch( '/admin/users/reset-password', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify( { username: target, password } )
+                        } );
+                        const result = await res.json();
+                        if ( res.ok && result.success )
+                        {
+                            showAppModal( result.message, 'success' );
+                        } else
+                        {
+                            showAppModal( result.message || 'Failed to reset the user\'s password. Please try again.', 'error' );
+                        }
+                    } catch ( err )
+                    {
+                        console.error( err );
+                        showAppModal( 'We could not reset the password right now. Please try again.', 'error' );
+                    }
+                } );
+
+
+            }
+
+
+            // --- LEAVE MANAGEMENT ---
+            async function loadLeaveRequests ()
+            {
+                const res = await fetch( '/admin/leaves' );
+                const leaves = await res.json();
+                const tbody = document.getElementById( 'leave-requests-body' );
+                tbody.innerHTML = '';
+                if ( leaves.length === 0 )
+                {
+                    tbody.innerHTML = '<tr><td colspan="7">No pending leave requests.</td></tr>';
+                    return;
+                }
+                leaves.forEach( leave =>
+                {
+                    const tr = document.createElement( 'tr' );
+                    const reasonPreview = leave.reason_truncated || ( leave.reason || '' );
+                    const fullReason = leave.reason_full || ( leave.reason || '' );
+                    // Remove server-provided ellipsis if present, so only one '...' link appears
+                    let previewForDisplay = reasonPreview;
+                    if ( previewForDisplay && previewForDisplay.endsWith( '...' ) ) previewForDisplay = previewForDisplay.slice( 0, -3 );
+                    const reasonHtml = fullReason && fullReason.length > 25
+                        ? `${ escapeHtml( previewForDisplay ) } <a href="#" class="show-reason" data-full="${ escapeHtmlAttr( fullReason ) }">...</a>`
+                        : escapeHtml( previewForDisplay );
+
+                    const leaveType = ( leave.leave_type || 'full' ) === 'half' ? 'Half' : 'Full';
+                    const leaveTypeBadge = leaveType === 'Half'
+                        ? '<span style="background:#f3e8ff;color:#6b21a8;padding:2px 6px;border-radius:3px;font-size:11px;font-weight:600;">HALF</span>'
+                        : '<span style="background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:3px;font-size:11px;font-weight:600;">FULL</span>';
+
+                    const flags = [];
+                    if ( leave.is_backdated ) flags.push( '<span title="Backdated request" style="font-size:12px;color:#666;margin-right:6px;">(backdated)</span>' );
+                    if ( leave.taken_back && leave.status !== 'withdrawn' ) flags.push( '<span title="Taken back" style="font-size:12px;color:#999;margin-right:6px;">(withdrawn)</span>' );
+
+                    // Determine whether current admin can act on this leave
+                    let actionHtml = '';
+                    const isPending = ( leave.status === 'pending' );
+                    const isWithdrawn = !!leave.taken_back;
+                    // currentUser is available globally; manager can act only on employee leaves
+                    const adminRole = ( currentUser && currentUser.role ) ? currentUser.role : '';
+                    const managerRestricted = ( adminRole === 'manager' && leave.role !== 'employee' );
+                    const canAct = isPending && !isWithdrawn && !managerRestricted;
+                    if ( canAct )
+                    {
+                        actionHtml = `<button class="approve-btn" onclick="handleLeaveAction(${ leave.leave_id }, 'approved')" title="Approve" style="padding:6px 10px;min-width:auto"><i class="fas fa-check-circle"></i></button> <button class="reject-btn" onclick="handleLeaveAction(${ leave.leave_id }, 'rejected')" title="Decline" style="padding:6px 10px;min-width:auto"><i class="fas fa-times-circle"></i></button>`;
+                    }
+
+                    tr.innerHTML = `
+                    <td>${ leave.username }</td>
+                    <td>${ leave.start_date }</td>
+                    <td>${ leave.end_date }</td>
+                    <td>${ leaveTypeBadge }</td>
+                    <td>${ reasonHtml }</td>
+                    <td>${ actionHtml }</td>
+                    <td>${ flags.join( ' ' ) }</td>
+                `;
+                    tbody.appendChild( tr );
+                } );
+            }
+
+            async function loadAllLeaves ()
+            {
+                const res = await fetch( '/admin/leaves/history' );
+                const leaves = await res.json();
+                const tbody = document.getElementById( 'all-leaves-body' );
+                tbody.innerHTML = '';
+                if ( leaves.length === 0 )
+                {
+                    tbody.innerHTML = '<tr><td colspan="7"><i class="fas fa-info-circle"></i> No time off requests yet.</td></tr>';
+                    return;
+                }
+                leaves.forEach( leave =>
+                {
+                    const tr = document.createElement( 'tr' );
+                    const reasonPreview = leave.reason_truncated || ( leave.reason || '' );
+                    const fullReason = leave.reason_full || ( leave.reason || '' );
+                    const reasonHtml = fullReason && fullReason.length > 25
+                        ? `${ escapeHtml( reasonPreview ) } <a href="#" class="show-reason" data-full="${ escapeHtmlAttr( fullReason ) }">...</a>`
+                        : escapeHtml( reasonPreview );
+
+                    const leaveType = ( leave.leave_type || 'full' ) === 'half' ? 'Half' : 'Full';
+                    const leaveTypeBadge = leaveType === 'Half'
+                        ? '<span style="background:#f3e8ff;color:#6b21a8;padding:2px 6px;border-radius:3px;font-size:11px;font-weight:600;">HALF</span>'
+                        : '<span style="background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:3px;font-size:11px;font-weight:600;">FULL</span>';
+
+                    const flags = [];
+                    if ( leave.is_backdated ) flags.push( '<span title="Backdated request" style="font-size:12px;color:#666;margin-right:6px;">(backdated)</span>' );
+                    if ( leave.taken_back && leave.status !== 'withdrawn' ) flags.push( '<span title="Taken back" style="font-size:12px;color:#999;margin-right:6px;">(withdrawn)</span>' );
+                    tr.innerHTML = `
+                    <td>${ leave.username }</td>
+                    <td>${ leave.start_date }</td>
+                    <td>${ leave.end_date }</td>
+                    <td>${ leaveTypeBadge }</td>
+                    <td>${ reasonHtml }</td>
+                    <td class="status-${ leave.status }">${ leave.status } ${ flags.join( ' ' ) }</td>
+                    <td>${ leave.approved_by || '' }</td>
+                `;
+                    tbody.appendChild( tr );
+                } );
+            }
+
+
+            // Simple HTML escaping helpers
+            function escapeHtml ( str )
+            {
+                if ( !str ) return '';
+                return str.replace( /&/g, '&amp;' ).replace( /</g, '&lt;' ).replace( />/g, '&gt;' ).replace( /"/g, '&quot;' ).replace( /'/g, '&#39;' );
+            }
+
+            function escapeHtmlAttr ( str )
+            {
+                return escapeHtml( str ).replace( /"/g, '&quot;' );
+            }
+
+            // Delegate click for show-reason links (use shared showAppModal)
+            document.addEventListener( 'click', ( e ) =>
+            {
+                const target = e.target;
+                if ( target && target.classList && target.classList.contains( 'show-reason' ) )
+                {
+                    e.preventDefault();
+                    const full = target.getAttribute( 'data-full' ) || '';
+                    if ( window.showAppModal ) window.showAppModal( full, 'info' );
+                }
+            } );
+            async function handleLeaveAction ( leave_id, status )
+            {
+                try
+                {
+                    const res = await fetch( '/admin/leaves/action', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify( { leave_id, status } )
+                    } );
+                    if ( res.ok )
+                    {
+                        const msg = status === 'approved' ? 'Leave approved successfully.' : 'Leave rejected successfully.';
+                        if ( window.showAppModal ) window.showAppModal( msg, 'success' );
+                    } else
+                    {
+                        // Try to extract error message
+                        let text = 'Could not process the action.';
+                        try { text = await res.text(); } catch ( e ) { /* ignore */ }
+                        if ( window.showAppModal ) window.showAppModal( text || 'Could not process the action.', 'error' );
+                    }
+                } catch ( e )
+                {
+                    console.error( e );
+                    if ( window.showAppModal ) window.showAppModal( 'An unexpected error occurred while processing the leave action.', 'error' );
+                }
+
+                // Refresh lists in either case to reflect updated server state
+                loadLeaveRequests(); // Refresh the list
+                loadAllLeaves(); // Refresh all leaves list
+            }
+
+            // --- ATTENDANCE VIEWER ---
+            async function populateUserDropdown ()
+            {
+                const res = await fetch( '/admin/users' );
+                const users = await res.json();
+                const select = document.getElementById( 'user-select' );
+                select.innerHTML = '<option value="">-- Select an employee --</option>';
+                const resetSelect = document.getElementById( 'reset-target' );
+                // clear existing options
+                if ( resetSelect )
+                {
+                    resetSelect.innerHTML = '<option value="">-- Select a user to reset --</option>';
+                }
+                users.forEach( user =>
+                {
+                    if ( user.role !== 'owner' )
+                    { // Owner attendance is not tracked
+                        const option = document.createElement( 'option' );
+                        option.value = user.name;
+                        option.textContent = `${ user.name } (${ user.role.replace( '_', ' ' ) })`;
+                        select.appendChild( option );
+                    }
+
+                    // Add to reset-target select for specific user reset
+                    if ( resetSelect )
+                    {
+                        // owner_admin sees all users; employee_admin sees employee_admin and employee; never include other users beyond those
+                        if ( currentUser && currentUser.role === 'owner' )
+                        {
+                            const rOpt = document.createElement( 'option' );
+                            rOpt.value = user.name;
+                            rOpt.textContent = `${ user.name } (${ user.role.replace( '_', ' ' ) })`;
+                            resetSelect.appendChild( rOpt );
+                        } else if ( currentUser && currentUser.role === 'manager' )
+                        {
+                            // Manager can reset only regular employees
+                            if ( user.role === 'employee' )
+                            {
+                                const rOpt = document.createElement( 'option' );
+                                rOpt.value = user.name;
+                                rOpt.textContent = `${ user.name } (${ user.role.replace( '_', ' ' ) })`;
+                                resetSelect.appendChild( rOpt );
+                            }
+                        }
+                    }
+                } );
+                select.addEventListener( 'change', ( e ) =>
+                {
+                    if ( e.target.value )
+                    {
+                        loadUserAttendance( e.target.value );
+                    }
+                } );
+            }
+
+            async function loadUserAttendance ( username )
+            {
+                const res = await fetch( `/admin/attendance/${ username }` );
+                const attendance = await res.json();
+                const tbody = document.getElementById( 'attendance-viewer-body' );
+                tbody.innerHTML = '';
+                if ( attendance.length === 0 )
+                {
+                    tbody.innerHTML = '<tr><td colspan="8">No attendance records found for this user.</td></tr>';
+                    return;
+                }
+                attendance.forEach( row =>
+                {
+                    const tr = document.createElement( 'tr' );
+                    tr.innerHTML = `
+                    <td>${ row.date }</td>
+                    <td>${ row.in_time || '' }</td>
+                    <td>${ row.in_latitude ? `<a href="https://www.google.com/maps/search/?api=1&query=${ row.in_latitude },${ row.in_longitude }" target="_blank" rel="noopener noreferrer">${ row.in_latitude.toFixed( 4 ) }, ${ row.in_longitude.toFixed( 4 ) }</a>` : '' }</td>
+                    <td>${ row.in_selfie_path ? `<img src="${ row.in_selfie_path }" width="100" class="selfie-thumbnail" style="cursor:pointer;border-radius:4px;" data-selfie-src="${ row.in_selfie_path }" data-selfie-type="Check-in selfie" title="Click to view full size">` : '' }</td>
+                    <td>${ row.out_time || '' }</td>
+                    <td>${ row.out_latitude ? `<a href="https://www.google.com/maps/search/?api=1&query=${ row.out_latitude },${ row.out_longitude }" target="_blank" rel="noopener noreferrer">${ row.out_latitude.toFixed( 4 ) }, ${ row.out_longitude.toFixed( 4 ) }</a>` : '' }</td>
+                    <td>${ row.out_selfie_path ? `<img src="${ row.out_selfie_path }" width="100" class="selfie-thumbnail" style="cursor:pointer;border-radius:4px;" data-selfie-src="${ row.out_selfie_path }" data-selfie-type="Check-out selfie" title="Click to view full size">` : '' }</td>
+                    <td>${ row.total_time || '' }</td>
+                `;
+                    tbody.appendChild( tr );
+                } );
+            }
+        </script>
+        <script src="/pwa-size.js"></script>
+        <script src="/ui.js"></script>
+        <script src="/flatpickr.min.js"></script>
+        <script>
+            window.addEventListener( 'load', async () =>
+            {
+                const userRes = await fetch( '/user/me' );
+                const user = await userRes.json();
+                initBottomNav( 'team', user.role );
+            } );
+
+            // Event delegation for selfie thumbnails
+            document.addEventListener( 'click', ( e ) =>
+            {
+                if ( e.target && e.target.classList.contains( 'selfie-thumbnail' ) )
+                {
+                    const src = e.target.getAttribute( 'data-selfie-src' );
+                    const type = e.target.getAttribute( 'data-selfie-type' );
+                    if ( src ) showImageModal( src, type );
+                }
+            } );
+        </script>
+    </body>
+
+</html>

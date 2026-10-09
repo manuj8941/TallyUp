@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <meta name="theme-color" content="#0ea5a4">
+        <meta name="description" content="Employee attendance tracking system">
+        <link rel="manifest" href="/manifest.json">
+        <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+        <link rel="apple-touch-icon" href="/icons/icon-192.png">
+        <title>Profile</title>
+        <link rel="stylesheet" href="/mobile.css">
+        <link rel="stylesheet" href="/flatpickr.min.css">
+        <link rel="stylesheet" href="/airbnb.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+        <!-- Apply branding color immediately to prevent flash -->
+        <script>
+            ( function ()
+            {
+                // Apply cached color instantly (synchronous)
+                const cached = localStorage.getItem( 'brandColor' );
+                if ( cached )
+                {
+                    document.documentElement.style.setProperty( '--brand-color', cached );
+                    document.documentElement.style.setProperty( '--accent', cached );
+                    // Update meta theme-color
+                    const metaTheme = document.querySelector( 'meta[name="theme-color"]' );
+                    if ( metaTheme ) metaTheme.setAttribute( 'content', cached );
+                }
+
+                // Fetch and update cache (async, non-blocking)
+                fetch( '/branding' ).then( res => res.json() ).then( data =>
+                {
+                    if ( data.brandColor )
+                    {
+                        localStorage.setItem( 'brandColor', data.brandColor );
+                        if ( data.brandColor !== cached )
+                        {
+                            document.documentElement.style.setProperty( '--brand-color', data.brandColor );
+                            document.documentElement.style.setProperty( '--accent', data.brandColor );
+                            // Update meta theme-color
+                            const metaTheme = document.querySelector( 'meta[name="theme-color"]' );
+                            if ( metaTheme ) metaTheme.setAttribute( 'content', data.brandColor );
+                        }
+                    }
+                } ).catch( () => { } );
+            } )();
+        </script>
+
+        <style>
+            /* Use global mobile.css for layout. Keep only small tweaks when needed. */
+            .container {
+                max-width: 420px;
+            }
+
+            /* modal sizing controlled by global stylesheet */
+        </style>
+    </head>
+
+    <body>
+        <div class="container">
+            <h1 style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                <i class="fas fa-user-circle"></i> My Profile
+                <img class="nav-avatar" id="header-avatar" src="/default-avatar.svg" alt="Profile"
+                    style="display:none;margin-left:auto">
+                <span style="font-size:0.9rem;font-weight:normal">
+                    Welcome, <strong id="profile-name"></strong>! (<span id="profile-role"></span>)
+                </span>
+            </h1>
+
+            <div class="section">
+                <h2><i class="fas fa-user-circle"></i> Profile Picture</h2>
+                <div style="text-align:center;margin-bottom:16px">
+                    <img id="profile-avatar" src="/default-avatar.svg" alt="Profile Picture"
+                        class="profile-avatar-large">
+                </div>
+                <input type="file" id="picture-input" accept="image/*" style="display:none">
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <button id="upload-picture-btn" type="button"><i class="fas fa-upload"></i> Upload Picture</button>
+                    <button id="remove-picture-btn" type="button" style="background:#ef4444;border-color:#ef4444"><i
+                            class="fas fa-trash"></i> Remove Picture</button>
+                </div>
+                <p style="font-size:12px;color:#666;margin-top:8px">Max size: 10MB. Will be resized to 100x100px.</p>
+            </div>
+
+            <div class="section">
+                <h2><i class="fas fa-key"></i> Update Your Password</h2>
+                <form id="profile-change-password-form">
+                    <label for="current-password">Your current password</label>
+                    <input type="password" id="current-password" name="old_password" required>
+                    <br>
+                    <label for="new-password">Choose a new password</label>
+                    <input type="password" id="new-password" name="new_password" required>
+                    <br>
+                    <label for="confirm-new-password">Type it again to confirm</label>
+                    <input type="password" id="confirm-new-password" name="confirm_new_password" required>
+                    <br>
+                    <button type="submit"><i class="fas fa-key"></i> Update Password</button>
+                </form>
+            </div>
+
+            <div class="section">
+                <h2>Account Info</h2>
+                <p><strong>Username:</strong> <span id="info-username"></span></p>
+                <p><strong>Role:</strong> <span id="info-role"></span></p>
+                <p><strong>Joined:</strong> <span id="info-join-date"></span></p>
+            </div>
+
+            <!-- Spacer to ensure content clears bottom navbar -->
+            <div class="bottom-spacer"></div>
+        </div>
+
+        <script>
+            async function fetchUser ()
+            {
+                const res = await fetch( '/user/me' );
+                if ( !res.ok ) return null;
+                return res.json();
+            }
+
+            window.addEventListener( 'load', async () =>
+            {
+                const user = await fetchUser();
+                if ( !user ) { if ( window.showAppModal ) showAppModal( 'Could not load profile. Please login again.', 'error' ); return; }
+                document.getElementById( 'profile-name' ).textContent = user.displayName || user.name;
+                document.getElementById( 'profile-role' ).textContent = ( user.role || '' ).replace( '_', ' ' );
+                document.getElementById( 'info-username' ).textContent = user.name;
+                document.getElementById( 'info-role' ).textContent = ( user.role || '' ).replace( '_', ' ' );
+
+                // Set profile picture
+                const profileAvatar = document.getElementById( 'profile-avatar' );
+                if ( user.profile_picture )
+                {
+                    // Add timestamp to bust cache
+                    const cacheBuster = '?t=' + new Date().getTime();
+                    profileAvatar.src = user.profile_picture + cacheBuster;
+                }
+
+                // Format join date as DD-MMM-YYYY
+                if ( user.join_date )
+                {
+                    const date = new Date( user.join_date );
+                    const day = date.getDate();
+                    const months = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ];
+                    const month = months[ date.getMonth() ];
+                    const year = date.getFullYear();
+                    document.getElementById( 'info-join-date' ).textContent = `${ day }-${ month }-${ year }`;
+                }
+                else
+                {
+                    document.getElementById( 'info-join-date' ).textContent = 'N/A';
+                }
+            } );
+
+            // Helper function to compress and resize image to 100x100px and <50KB
+            async function compressImage ( file )
+            {
+                return new Promise( ( resolve, reject ) =>
+                {
+                    if ( file.size > 10 * 1024 * 1024 )
+                    {
+                        reject( new Error( 'Image too large. Please select an image under 10MB.' ) );
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = ( e ) =>
+                    {
+                        const img = new Image();
+                        img.onload = () =>
+                        {
+                            // Always crop to center square, then resize to 100x100px
+                            const size = 100;
+                            const canvas = document.createElement( 'canvas' );
+                            canvas.width = size;
+                            canvas.height = size;
+                            const ctx = canvas.getContext( '2d' );
+                            // Center-crop to square
+                            let sx = 0, sy = 0, sw = img.width, sh = img.height;
+                            if ( img.width > img.height )
+                            {
+                                sx = ( img.width - img.height ) / 2;
+                                sw = img.height;
+                            } else if ( img.height > img.width )
+                            {
+                                sy = ( img.height - img.width ) / 2;
+                                sh = img.width;
+                            }
+                            ctx.clearRect( 0, 0, size, size );
+                            ctx.drawImage( img, sx, sy, sw, sh, 0, 0, size, size );
+
+                            // Try different quality levels until < 50KB
+                            let quality = 0.9;
+                            const tryCompress = () =>
+                            {
+                                canvas.toBlob( ( blob ) =>
+                                {
+                                    if ( blob.size <= 50 * 1024 || quality <= 0.1 )
+                                    {
+                                        resolve( blob );
+                                    }
+                                    else
+                                    {
+                                        quality -= 0.1;
+                                        tryCompress();
+                                    }
+                                }, 'image/jpeg', quality );
+                            };
+                            tryCompress();
+                        };
+                        img.onerror = () => reject( new Error( 'Failed to load image' ) );
+                        img.src = e.target.result;
+                    };
+                    reader.onerror = () => reject( new Error( 'Failed to read file' ) );
+                    reader.readAsDataURL( file );
+                } );
+            }
+
+            // Upload picture button
+            document.getElementById( 'upload-picture-btn' ).addEventListener( 'click', () =>
+            {
+                document.getElementById( 'picture-input' ).click();
+            } );
+
+            // Handle file selection
+            document.getElementById( 'picture-input' ).addEventListener( 'change', async ( e ) =>
+            {
+                const file = e.target.files[ 0 ];
+                if ( !file ) return;
+
+                try
+                {
+                    const compressedBlob = await compressImage( file );
+
+                    // Convert blob to base64
+                    const reader = new FileReader();
+                    reader.onload = async ( evt ) =>
+                    {
+                        const base64Picture = evt.target.result;
+
+                        // Upload to server
+                        const res = await fetch( '/user/profile-picture', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify( { picture: base64Picture } )
+                        } );
+
+                        const result = await res.json();
+                        if ( res.ok && result.success )
+                        {
+                            if ( window.showAppModal )
+                            {
+                                // Show modal and reload after user clicks OK
+                                showAppModal( result.message || 'Profile picture updated!', 'success', () =>
+                                {
+                                    window.location.reload();
+                                } );
+                            }
+                            else
+                            {
+                                window.location.reload();
+                            }
+                        }
+                        else
+                        {
+                            if ( window.showAppModal ) showAppModal( result.message || 'Failed to upload picture.', 'error' );
+                        }
+                    };
+                    reader.onerror = () =>
+                    {
+                        if ( window.showAppModal ) showAppModal( 'Error reading image file.', 'error' );
+                    };
+                    reader.readAsDataURL( compressedBlob );
+                } catch ( err )
+                {
+                    console.error( err );
+                    if ( window.showAppModal ) showAppModal( err.message || 'Error processing image.', 'error' );
+                }
+
+                // Clear input
+                e.target.value = '';
+            } );
+
+            // Remove picture button
+            document.getElementById( 'remove-picture-btn' ).addEventListener( 'click', async () =>
+            {
+                const confirmed = window.showAppConfirm
+                    ? await window.showAppConfirm( 'Remove your profile picture?' )
+                    : confirm( 'Remove your profile picture?' );
+
+                if ( !confirmed ) return;
+
+                try
+                {
+                    const res = await fetch( '/user/profile-picture', { method: 'DELETE' } );
+                    const result = await res.json();
+
+                    if ( res.ok && result.success )
+                    {
+                        document.getElementById( 'profile-avatar' ).src = '/default-avatar.svg';
+                        if ( window.showAppModal ) showAppModal( result.message || 'Profile picture removed.', 'success' );
+
+                        // Trigger header refresh
+                        if ( window.applyBranding ) window.applyBranding();
+                    }
+                    else
+                    {
+                        if ( window.showAppModal ) showAppModal( result.message || 'Failed to remove picture.', 'error' );
+                    }
+                } catch ( err )
+                {
+                    console.error( err );
+                    if ( window.showAppModal ) showAppModal( 'Error removing picture.', 'error' );
+                }
+            } );
+
+            // Change password handler using shared modal
+            document.getElementById( 'profile-change-password-form' ).addEventListener( 'submit', async ( e ) =>
+            {
+                e.preventDefault();
+                const old_password = document.getElementById( 'current-password' ).value;
+                const new_password = document.getElementById( 'new-password' ).value;
+                const confirm = document.getElementById( 'confirm-new-password' ).value;
+                if ( new_password !== confirm ) { if ( window.showAppModal ) showAppModal( 'Oops! Those passwords don\'t match. Please try again.', 'error' ); return; }
+                try
+                {
+                    const res = await fetch( '/user/change-password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify( { old_password, new_password } )
+                    } );
+                    const result = await res.json();
+                    if ( res.ok && result.success ) { if ( window.showAppModal ) showAppModal( result.message || 'Great! Your password has been updated successfully. 🎉', 'success' ); document.getElementById( 'profile-change-password-form' ).reset(); }
+                    else { if ( window.showAppModal ) showAppModal( result.message || 'Failed to change password.', 'error' ); }
+                } catch ( err )
+                {
+                    console.error( err );
+                    if ( window.showAppModal ) showAppModal( 'Error changing password.', 'error' );
+                }
+            } );
+        </script>
+        <script src="/pwa-size.js"></script>
+        <script src="/ui.js"></script>
+        <script src="/flatpickr.min.js"></script>
+        <script>
+            window.addEventListener( 'load', async () =>
+            {
+                const userRes = await fetch( '/user/me' );
+                const user = await userRes.json();
+                initBottomNav( 'profile', user.role );
+            } );
+        </script>
+    </body>
+
+</html>

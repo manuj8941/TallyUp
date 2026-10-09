@@ -1,0 +1,898 @@
+<!doctype html>
+<html>
+
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <meta name="theme-color" content="#0ea5a4">
+        <meta name="description" content="Employee attendance tracking system">
+        <link rel="manifest" href="/manifest.json">
+        <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+        <link rel="apple-touch-icon" href="/icons/icon-192.png">
+        <title>App Settings</title>
+        <link rel="stylesheet" href="/mobile.css">
+        <link rel="stylesheet" href="/flatpickr.min.css">
+        <link rel="stylesheet" href="/airbnb.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+        <!-- Apply branding color immediately to prevent flash -->
+        <script>
+            ( function ()
+            {
+                // Apply cached color instantly (synchronous)
+                const cached = localStorage.getItem( 'brandColor' );
+                if ( cached )
+                {
+                    document.documentElement.style.setProperty( '--brand-color', cached );
+                    document.documentElement.style.setProperty( '--accent', cached );
+                    // Update meta theme-color
+                    const metaTheme = document.querySelector( 'meta[name="theme-color"]' );
+                    if ( metaTheme ) metaTheme.setAttribute( 'content', cached );
+                }
+
+                // Fetch and update cache (async, non-blocking)
+                fetch( '/branding' ).then( res => res.json() ).then( data =>
+                {
+                    if ( data.brandColor )
+                    {
+                        localStorage.setItem( 'brandColor', data.brandColor );
+                        if ( data.brandColor !== cached )
+                        {
+                            document.documentElement.style.setProperty( '--brand-color', data.brandColor );
+                            document.documentElement.style.setProperty( '--accent', data.brandColor );
+                            // Update meta theme-color
+                            const metaTheme = document.querySelector( 'meta[name="theme-color"]' );
+                            if ( metaTheme ) metaTheme.setAttribute( 'content', data.brandColor );
+                        }
+                    }
+                } ).catch( () => { } );
+            } )();
+        </script>
+    </head>
+
+    <body>
+
+        <div class="container">
+            <h1 style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                <i class="fas fa-cog"></i> System Settings
+                <img class="nav-avatar" id="header-avatar" src="/default-avatar.svg" alt="Profile"
+                    style="display:none;margin-left:auto">
+                <span style="font-size:0.9rem;font-weight:normal">
+                    Welcome, <strong id="profile-name"></strong>! (<span id="profile-role"></span>)
+                </span>
+            </h1>
+            <p>Manage your attendance system.</p>
+
+            <div class="section">
+                <h2><i class="fas fa-desktop"></i> Desktop Access Control</h2>
+                <label style="display:inline-flex;align-items:center;gap:8px">
+                    <input type="checkbox" id="desktop-enabled"> <span>Let team members sign in from desktops</span>
+                </label>
+                <div style="margin-top:8px" class="small">When disabled, your team can only access from mobile devices.
+                </div>
+            </div>
+            <div class="section">
+                <h2><i class="fas fa-calendar-week"></i> Weekly Holidays</h2>
+                <select id="weekly-off-mode">
+                    <option value="1">All Sundays off</option>
+                    <option value="2">All Sundays + All Saturdays off</option>
+                    <option value="3">All Sundays + 2nd & 4th Saturdays off (default)</option>
+                </select>
+                <div class="small" style="margin-top:8px">Select which days your team gets off each week.</div>
+                <div style="margin-top:8px"><button id="save-weekly"><i class="fas fa-save"></i> Save Schedule</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2><i class="fas fa-globe"></i> Timezone</h2>
+                <select id="timezone-select">
+                    <optgroup label="India">
+                        <option value="Asia/Kolkata">India - IST (UTC+5:30)</option>
+                    </optgroup>
+                    <optgroup label="United Kingdom">
+                        <option value="Europe/London">United Kingdom - GMT/BST (UTC+0/+1)</option>
+                    </optgroup>
+                    <optgroup label="United States">
+                        <option value="America/New_York">Eastern Time (ET) - New York, Miami, Atlanta</option>
+                        <option value="America/Chicago">Central Time (CT) - Chicago, Dallas, Houston</option>
+                        <option value="America/Denver">Mountain Time (MT) - Denver, Salt Lake City</option>
+                        <option value="America/Phoenix">Mountain Time (MST) - Arizona (no DST)</option>
+                        <option value="America/Los_Angeles">Pacific Time (PT) - LA, San Francisco, Seattle</option>
+                        <option value="America/Anchorage">Alaska Time (AKT) - Anchorage</option>
+                        <option value="Pacific/Honolulu">Hawaii-Aleutian Time (HST) - Honolulu</option>
+                        <option value="America/Detroit">Eastern Time - Detroit, Michigan</option>
+                        <option value="America/Indiana/Indianapolis">Eastern Time - Indianapolis</option>
+                        <option value="America/Kentucky/Louisville">Eastern Time - Louisville, Kentucky</option>
+                        <option value="America/Boise">Mountain Time - Boise, Idaho</option>
+                    </optgroup>
+                    <optgroup label="Canada">
+                        <option value="America/St_Johns">Newfoundland Time (NT) - St. John's</option>
+                        <option value="America/Halifax">Atlantic Time (AT) - Halifax, Nova Scotia</option>
+                        <option value="America/Toronto">Eastern Time (ET) - Toronto, Ottawa</option>
+                        <option value="America/Winnipeg">Central Time (CT) - Winnipeg, Manitoba</option>
+                        <option value="America/Regina">Central Time (CST) - Saskatchewan (no DST)</option>
+                        <option value="America/Edmonton">Mountain Time (MT) - Edmonton, Calgary</option>
+                        <option value="America/Vancouver">Pacific Time (PT) - Vancouver, Victoria</option>
+                        <option value="America/Whitehorse">Pacific Time - Yukon</option>
+                    </optgroup>
+                </select>
+                <div class="small" style="margin-top:8px">All users will see times in this timezone. Changes apply
+                    immediately for everyone.</div>
+                <div style="margin-top:8px"><button id="save-timezone"><i class="fas fa-save"></i> Save
+                        Timezone</button>
+                </div>
+            </div>
+
+            <div class="section" id="test-date-section" style="background:linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
+                        border:2px solid #ff9800;
+                        box-shadow:0 4px 12px rgba(255,152,0,0.2);
+                        position:relative;
+                        padding:20px;">
+
+                <!-- Warning Badge -->
+                <div
+                    style="position:absolute;top:12px;right:12px;background:#ff9800;color:white;padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:600;text-transform:uppercase;">
+                    <i class="fas fa-exclamation-triangle"></i> Test Mode
+                </div>
+
+                <h2 style="color:#e65100;margin-top:0;">
+                    <i class="fas fa-flask" style="color:#ff9800;font-size:1.5rem;margin-right:8px;"></i>
+                    Testing Mode
+                </h2>
+
+                <!-- Warning Message Box -->
+                <div
+                    style="background:#fff;border-left:4px solid #ff9800;padding:12px;margin:16px 0;border-radius:4px;">
+                    <div style="display:flex;align-items:start;gap:12px;">
+                        <i class="fas fa-exclamation-triangle"
+                            style="color:#ff9800;font-size:1.5rem;margin-top:2px;"></i>
+                        <div>
+                            <strong style="color:#e65100;display:block;margin-bottom:4px;">⚠️ CAUTION: System-Wide
+                                Impact</strong>
+                            <p style="margin:0;font-size:0.875rem;color:#666;line-height:1.5;">
+                                This simulates a different date <strong>for the entire system</strong>.
+                                All users will see and work with the test date. Use only for testing purposes.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <label for="test-date-input" style="font-weight:600;color:#e65100;">
+                    <i class="fas fa-calendar-alt"></i> Test Date
+                </label>
+                <input type="date" id="test-date-input" style="border:2px solid #ff9800;">
+
+                <div style="display:flex;gap:8px;margin-top:12px;">
+                    <button id="set-test-date" style="background:#ff9800;border:none;color:white;flex:1;">
+                        <i class="fas fa-flask"></i> Enable Testing Mode
+                    </button>
+                    <button id="clear-test-date" style="background:#4caf50;border:none;color:white;flex:1;">
+                        <i class="fas fa-undo"></i> Return to Normal
+                    </button>
+                </div>
+
+                <div id="current-test-date"
+                    style="margin-top:12px;padding:10px;background:#fff;border-radius:4px;font-weight:600;"></div>
+            </div>
+
+            <div class="section">
+                <h2><i class="fas fa-database"></i> Database Backup</h2>
+                <p class="small">Download a copy of your attendance database for safekeeping.</p>
+                <button id="download-backup">
+                    <i class="fas fa-download"></i> Download Backup
+                </button>
+                <div class="small" style="margin-top:8px;color:var(--muted)">
+                    <i class="fas fa-info-circle"></i> Backup includes all attendance records, leaves, users, and
+                    settings.
+                </div>
+            </div>
+
+            <div class="section">
+                <h2><i class="fas fa-umbrella-beach"></i> Special Days Off</h2>
+                <form id="add-adhoc-form">
+                    <label for="adhoc-date"><i class="fas fa-calendar-day"></i> Date</label>
+                    <input type="date" id="adhoc-date" name="date" required>
+                    <label for="adhoc-reason"><i class="fas fa-comment"></i> Reason</label>
+                    <input type="text" id="adhoc-reason" maxlength="250" required>
+                    <div style="margin-top:8px"><button type="submit"><i class="fas fa-plus-circle"></i> Add Day
+                            Off</button></div>
+                </form>
+                <hr>
+                <div id="adhoc-list">
+                    <p><i class="fas fa-spinner fa-spin"></i> Loading special days off...</p>
+                </div>
+                <div class="small" style="margin-top:8px">Note: Add these at least one day in advance.</div>
+            </div>
+
+            <div class="section" style="margin-top:16px">
+                <h2><i class="fas fa-gift"></i> Company Holidays</h2>
+                <form id="add-holiday-form">
+                    <label for="holiday-date"><i class="fas fa-calendar-day"></i> Date</label>
+                    <input type="date" id="holiday-date" name="date" required>
+                    <label for="holiday-name"><i class="fas fa-star"></i> Holiday Name (e.g. Deepawali)</label>
+                    <input type="text" id="holiday-name" name="name" required>
+                    <label style="display:inline-flex;align-items:center;gap:8px;margin-top:6px"><input type="checkbox"
+                            id="holiday-recurring"> <span>Repeat this holiday every year</span></label>
+                    <div style="margin-top:8px"><button type="submit"><i class="fas fa-plus-circle"></i> Add
+                            Holiday</button></div>
+                </form>
+                <hr>
+                <div id="holiday-list">
+                    <p><i class="fas fa-spinner fa-spin"></i> Loading holidays...</p>
+                </div>
+                <div class="small" style="margin-top:8px">Add one-time events or holidays that repeat annually.
+                </div>
+            </div>
+
+            <!-- Company Branding Section -->
+            <div class="section">
+                <h2><i class="fas fa-palette"></i> Company Branding</h2>
+
+                <label>Company Name</label>
+                <input type="text" id="company-name" placeholder="Your Company Name" style="margin-bottom:8px">
+                <div style="display:flex;gap:8px;margin-bottom:20px">
+                    <button onclick="updateCompanyName()" class="btn-primary">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                    <button onclick="resetCompanyName()" class="btn-secondary" title="Reset to default">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
+                </div>
+
+                <label>Brand Color</label>
+                <div style="display:flex;gap:8px;align-items:center;margin-bottom:20px">
+                    <input type="color" id="brand-color" value="#0ea5a4" onchange="updateBrandColor()"
+                        style="width:50px;height:44px;border:1px solid var(--border);border-radius:8px;cursor:pointer;padding:4px">
+                    <span id="color-preview"
+                        style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);font-size:0.875rem;color:var(--muted);display:flex;align-items:center;gap:8px">
+                        <i class="fas fa-palette"></i> Click color to change
+                    </span>
+                    <button onclick="resetBrandColor()" class="btn-secondary" title="Reset to default">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
+                </div>
+
+                <label>Company Logo <span class="small" style="color:var(--muted)">(Max 5MB,
+                        auto-compressed)</span></label>
+                <input type="file" id="logo-upload" accept="image/*" style="display:none">
+                <div style="display:flex;gap:8px;margin-bottom:12px">
+                    <button onclick="triggerLogoUpload()" class="btn-primary" style="flex:1">
+                        <i class="fas fa-upload"></i> Upload
+                    </button>
+                    <button onclick="removeLogo()" class="btn-danger" title="Remove logo">
+                        <i class="fas fa-trash"></i> Remove
+                    </button>
+                </div>
+                <img id="logo-preview"
+                    style="max-width:200px;margin-top:8px;display:none;border:1px solid var(--border);border-radius:8px;padding:4px">
+            </div>
+
+            <!-- Spacer to ensure content clears bottom navbar -->
+            <div class="bottom-spacer"></div>
+
+            <script>
+                async function fetchSettings ()
+                {
+                    const res = await fetch( '/admin/settings/app' );
+                    if ( !res.ok ) { showAppModal( 'Could not load app settings.', 'error' ); return null; }
+                    return res.json();
+                }
+
+                async function fetchBranding ()
+                {
+                    const res = await fetch( '/branding' );
+                    if ( !res.ok ) return null;
+                    return res.json();
+                }
+
+                function formatDatePretty ( iso )
+                {
+                    if ( !iso ) return iso;
+                    // Expect iso YYYY-MM-DD -> format to D-MMM-YY (e.g., 4-Dec-25)
+                    const parts = iso.split( '-' );
+                    if ( parts.length !== 3 ) return iso;
+                    const y = parts[ 0 ];
+                    const m = parseInt( parts[ 1 ], 10 );
+                    const d = parseInt( parts[ 2 ], 10 );
+                    const months = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ];
+                    return `${ d }-${ months[ m - 1 ] }-${ y.slice( 2 ) }`;
+                }
+
+                // --- BRANDING FUNCTIONS ---
+
+                async function updateCompanyName ()
+                {
+                    const name = document.getElementById( 'company-name' ).value.trim();
+                    if ( !name )
+                    {
+                        showAppModal( 'Please enter a company name.', 'error' );
+                        return;
+                    }
+
+                    try
+                    {
+                        const res = await fetch( '/admin/settings/company-name', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify( { name } )
+                        } );
+                        const data = await res.json();
+                        if ( data.success )
+                        {
+                            showAppModal( data.message, 'success' );
+                        }
+                        else
+                        {
+                            showAppModal( data.message, 'error' );
+                        }
+                    }
+                    catch ( err )
+                    {
+                        showAppModal( 'Failed to update company name.', 'error' );
+                    }
+                }
+
+                async function updateBrandColor ()
+                {
+                    const color = document.getElementById( 'brand-color' ).value;
+
+                    try
+                    {
+                        const res = await fetch( '/admin/settings/brand-color', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify( { color } )
+                        } );
+                        const data = await res.json();
+                        if ( data.success )
+                        {
+                            // Apply color immediately
+                            document.documentElement.style.setProperty( '--brand-color', color );
+                            // Reload page to apply color everywhere
+                            location.reload();
+                        }
+                        else
+                        {
+                            showAppModal( data.message, 'error' );
+                        }
+                    }
+                    catch ( err )
+                    {
+                        showAppModal( 'Failed to update brand color.', 'error' );
+                    }
+                }
+
+                function triggerLogoUpload ()
+                {
+                    document.getElementById( 'logo-upload' ).click();
+                }
+
+                // Auto-trigger upload when file is selected
+                document.addEventListener( 'DOMContentLoaded', () =>
+                {
+                    const fileInput = document.getElementById( 'logo-upload' );
+                    fileInput.addEventListener( 'change', async ( e ) =>
+                    {
+                        const file = e.target.files[ 0 ];
+                        if ( !file ) return;
+
+                        // Check file type
+                        if ( !file.type.startsWith( 'image/' ) )
+                        {
+                            showAppModal( 'Please upload an image file (JPEG, PNG, WebP, etc.)', 'error' );
+                            fileInput.value = '';
+                            return;
+                        }
+
+                        // Check file size (5MB limit)
+                        const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+                        if ( file.size > maxSize )
+                        {
+                            const sizeMB = ( file.size / ( 1024 * 1024 ) ).toFixed( 1 );
+                            showAppModal( `Image is too large (${ sizeMB }MB). Please upload an image smaller than 5MB.`, 'error' );
+                            fileInput.value = '';
+                            return;
+                        }
+
+                        // Compress image client-side before upload
+                        try
+                        {
+                            const compressedBase64 = await compressImage( file, 400, 0.8 );
+
+                            const res = await fetch( '/admin/settings/logo', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify( { logo: compressedBase64 } )
+                            } );
+                            const data = await res.json();
+                            if ( data.success )
+                            {
+                                showAppModal( data.message, 'success', () =>
+                                {
+                                    // Reload to show new logo
+                                    location.reload();
+                                } );
+                            }
+                            else
+                            {
+                                showAppModal( data.message, 'error' );
+                                fileInput.value = '';
+                            }
+                        }
+                        catch ( err )
+                        {
+                            console.error( 'Logo upload error:', err );
+                            showAppModal( 'Failed to upload logo. Please try a different image.', 'error' );
+                            fileInput.value = '';
+                        }
+                    } );
+                } );
+
+                /**
+                 * Compress image client-side using canvas
+                 * @param {File} file - Image file to compress
+                 * @param {number} maxWidth - Maximum width in pixels
+                 * @param {number} quality - JPEG quality (0-1)
+                 * @returns {Promise<string>} Base64 encoded compressed image
+                 */
+                function compressImage ( file, maxWidth, quality )
+                {
+                    return new Promise( ( resolve, reject ) =>
+                    {
+                        const reader = new FileReader();
+                        reader.onload = ( e ) =>
+                        {
+                            const img = new Image();
+                            img.onload = () =>
+                            {
+                                // Calculate dimensions maintaining aspect ratio
+                                let width = img.width;
+                                let height = img.height;
+
+                                if ( width > maxWidth )
+                                {
+                                    height = ( height * maxWidth ) / width;
+                                    width = maxWidth;
+                                }
+
+                                // Create canvas and draw resized image
+                                const canvas = document.createElement( 'canvas' );
+                                canvas.width = width;
+                                canvas.height = height;
+                                const ctx = canvas.getContext( '2d' );
+                                ctx.drawImage( img, 0, 0, width, height );
+
+                                // Export as PNG to preserve transparency
+                                const compressedBase64 = canvas.toDataURL( 'image/png' );
+                                resolve( compressedBase64 );
+                            };
+                            img.onerror = reject;
+                            img.src = e.target.result;
+                        };
+                        reader.onerror = reject;
+                        reader.readAsDataURL( file );
+                    } );
+                }
+
+                async function removeLogo ()
+                {
+                    const confirmed = await showAppConfirm( 'Are you sure you want to remove the company logo?' );
+                    if ( !confirmed ) return;
+
+                    try
+                    {
+                        const res = await fetch( '/admin/settings/logo/remove', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                        } );
+                        const data = await res.json();
+                        if ( data.success )
+                        {
+                            showAppModal( data.message, 'success', () =>
+                            {
+                                location.reload();
+                            } );
+                        }
+                        else
+                        {
+                            showAppModal( data.message, 'error' );
+                        }
+                    }
+                    catch ( err )
+                    {
+                        showAppModal( 'Failed to remove logo.', 'error' );
+                    }
+                }
+
+                async function resetBrandColor ()
+                {
+                    const confirmed = await showAppConfirm( 'Reset brand color to default (#0ea5a4)?' );
+                    if ( !confirmed ) return;
+
+                    try
+                    {
+                        const res = await fetch( '/admin/settings/brand-color/reset', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                        } );
+                        const data = await res.json();
+                        if ( data.success )
+                        {
+                            showAppModal( data.message, 'success', () =>
+                            {
+                                location.reload();
+                            } );
+                        }
+                        else
+                        {
+                            showAppModal( data.message, 'error' );
+                        }
+                    }
+                    catch ( err )
+                    {
+                        showAppModal( 'Failed to reset brand color.', 'error' );
+                    }
+                }
+
+                async function resetCompanyName ()
+                {
+                    const confirmed = await showAppConfirm( 'Reset company name to default (Attendance System)?' );
+                    if ( !confirmed ) return;
+
+                    try
+                    {
+                        const res = await fetch( '/admin/settings/company-name/reset', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                        } );
+                        const data = await res.json();
+                        if ( data.success )
+                        {
+                            showAppModal( data.message, 'success', () =>
+                            {
+                                location.reload();
+                            } );
+                        }
+                        else
+                        {
+                            showAppModal( data.message, 'error' );
+                        }
+                    }
+                    catch ( err )
+                    {
+                        showAppModal( 'Failed to reset company name.', 'error' );
+                    }
+                }
+
+                function formatMonthDayPretty ( mmdd )
+                {
+                    if ( !mmdd ) return mmdd;
+                    const parts = mmdd.split( '-' );
+                    if ( parts.length !== 2 ) return mmdd;
+                    const m = parseInt( parts[ 0 ], 10 );
+                    const d = parseInt( parts[ 1 ], 10 );
+                    const months = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ];
+                    return `${ d }-${ months[ m - 1 ] }`;
+                }
+
+                window.addEventListener( 'load', async () =>
+                {
+                    // Fetch and display current user info
+                    const userRes = await fetch( '/user/me' );
+                    const currentUser = await userRes.json();
+                    document.getElementById( 'profile-name' ).textContent = currentUser.displayName || currentUser.name;
+                    document.getElementById( 'profile-role' ).textContent = currentUser.role.replace( '_', ' ' );
+
+                    // Apply branding (logo and avatar)
+                    if ( window.applyBranding ) window.applyBranding();
+
+                    const s = await fetchSettings();
+                    if ( !s ) return;
+                    document.getElementById( 'desktop-enabled' ).checked = !!s.desktop_enabled;
+                    document.getElementById( 'weekly-off-mode' ).value = s.weekly_off_mode || '3';
+                    document.getElementById( 'timezone-select' ).value = s.timezone || 'Asia/Kolkata';
+
+                    // Database Backup handler
+                    document.getElementById( 'download-backup' ).addEventListener( 'click', async () =>
+                    {
+                        try
+                        {
+                            const now = new Date();
+                            const hour = now.getHours() % 12 || 12;
+                            const min = String( now.getMinutes() ).padStart( 2, '0' );
+                            const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+                            const day = now.getDate();
+                            const month = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ][ now.getMonth() ];
+                            const year = String( now.getFullYear() ).slice( -2 );
+                            const filename = `attendance-backup-${ hour }-${ min }-${ ampm }-${ day }-${ month }-${ year }.db`;
+
+                            // Create hidden iframe to trigger download without navigation
+                            const iframe = document.createElement( 'iframe' );
+                            iframe.style.display = 'none';
+                            iframe.src = `/admin/backup/download?filename=${ encodeURIComponent( filename ) }`;
+                            document.body.appendChild( iframe );
+
+                            // Show success after short delay
+                            setTimeout( () =>
+                            {
+                                showAppModal( 'Backup download started! 🎉', 'success' );
+                                // Remove iframe after download starts
+                                setTimeout( () => document.body.removeChild( iframe ), 2000 );
+                            }, 300 );
+                        }
+                        catch ( err )
+                        {
+                            console.error( err );
+                            showAppModal( 'Failed to download backup. Please try again.', 'error' );
+                        }
+                    } );
+
+                    // Load branding settings
+                    const branding = await fetchBranding();
+                    if ( branding )
+                    {
+                        document.getElementById( 'company-name' ).value = branding.companyName || '';
+                        document.getElementById( 'brand-color' ).value = branding.brandColor || '#0ea5a4';
+                        if ( branding.logo )
+                        {
+                            document.getElementById( 'logo-preview' ).src = branding.logo;
+                            document.getElementById( 'logo-preview' ).style.display = 'block';
+                        }
+                    }
+
+                    // Immediate save when desktop access checkbox is toggled
+                    const desktopCheckbox = document.getElementById( 'desktop-enabled' );
+                    desktopCheckbox.addEventListener( 'change', async () =>
+                    {
+                        const enabled = desktopCheckbox.checked ? '1' : '0';
+                        try
+                        {
+                            const res = await fetch( '/admin/settings/app', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify( { desktop_enabled: enabled, weekly_off_mode: document.getElementById( 'weekly-off-mode' ).value || '1' } ) } );
+                            const body = await res.json();
+                            if ( res.ok && body.success )
+                            {
+                                showAppModal( desktopCheckbox.checked ? 'Desktop access enabled.' : 'Desktop access disabled.', 'success' );
+                            } else
+                            {
+                                showAppModal( body.message || 'Could not update desktop access setting.', 'error' );
+                                desktopCheckbox.checked = !desktopCheckbox.checked; // revert
+                            }
+                        } catch ( e )
+                        {
+                            console.error( e );
+                            showAppModal( 'Failed to update desktop access. Please try again.', 'error' );
+                            desktopCheckbox.checked = !desktopCheckbox.checked; // revert
+                        }
+                    } );
+
+                    // Test Date Override handlers (owner-only page)
+                    try
+                    {
+                        const info = document.getElementById( 'current-test-date' );
+                        const input = document.getElementById( 'test-date-input' );
+                        const setBtn = document.getElementById( 'set-test-date' );
+                        const clearBtn = document.getElementById( 'clear-test-date' );
+
+                        // Load current test-date override
+                        ( async function ()
+                        {
+                            try
+                            {
+                                const curRes = await fetch( '/admin/settings/test-date' );
+                                if ( curRes.ok )
+                                {
+                                    const body = await curRes.json();
+                                    if ( body && body.test_date )
+                                    {
+                                        info.textContent = `Current override: ${ formatDatePretty( body.test_date ) }`;
+                                        input.value = body.test_date;
+                                    } else
+                                    {
+                                        info.textContent = 'No test date override is set.';
+                                    }
+                                }
+                            } catch ( e ) { /* ignore */ }
+                        } )();
+
+                        setBtn.addEventListener( 'click', async () =>
+                        {
+                            const dt = input.value;
+                            try
+                            {
+                                const res = await fetch( '/admin/settings/test-date', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify( { test_date: dt } ) } );
+                                const body = await res.json();
+                                if ( res.ok && body.success )
+                                {
+                                    info.textContent = body.test_date ? `Current override: ${ formatDatePretty( body.test_date ) }` : 'No test date override is set.';
+                                    showAppModal( 'Test date override saved.', 'success' );
+                                } else
+                                {
+                                    showAppModal( body.message || 'Could not save test date.', 'error' );
+                                }
+                            } catch ( e ) { console.error( e ); showAppModal( 'Could not save test date.', 'error' ); }
+                        } );
+
+                        clearBtn.addEventListener( 'click', async () =>
+                        {
+                            try
+                            {
+                                const res = await fetch( '/admin/settings/test-date', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify( { test_date: '' } ) } );
+                                const body = await res.json();
+                                if ( res.ok && body.success )
+                                {
+                                    info.textContent = 'No test date override is set.';
+                                    input.value = '';
+                                    showAppModal( 'System returned to normal! ✅', 'success', () =>
+                                    {
+                                        location.reload();
+                                    } );
+                                } else
+                                {
+                                    showAppModal( body.message || 'Could not clear test date.', 'error' );
+                                }
+                            } catch ( e ) { console.error( e ); showAppModal( 'Could not clear test date.', 'error' ); }
+                        } );
+                    } catch ( e ) { /* ignore */ }
+
+                    // Ad-hoc list
+                    const adhocList = document.getElementById( 'adhoc-list' );
+                    if ( s.ad_hoc_offs && s.ad_hoc_offs.length )
+                    {
+                        adhocList.innerHTML = '';
+                        s.ad_hoc_offs.forEach( a =>
+                        {
+                            const row = document.createElement( 'div' );
+                            row.className = 'card list-row';
+                            row.innerHTML = `<div>${ formatDatePretty( a.date ) } — ${ a.reason || '' }</div><div style="text-align:right"><button data-id="${ a.id }" class="remove-adhoc" title="Remove" style="padding:6px 10px;min-width:auto;background:#f44336;border-color:#f44336"><i class="fas fa-trash"></i></button></div>`;
+                            adhocList.appendChild( row );
+                        } );
+                    } else
+                    {
+                        adhocList.innerHTML = '<p>No ad-hoc off days declared.</p>';
+                    }
+
+                    // Holidays
+                    const holList = document.getElementById( 'holiday-list' );
+                    if ( s.holidays && s.holidays.length )
+                    {
+                        holList.innerHTML = '';
+                        s.holidays.forEach( h =>
+                        {
+                            const row = document.createElement( 'div' );
+                            row.className = 'card list-row';
+                            let display = '';
+                            if ( h.date ) display = `${ formatDatePretty( h.date ) }`;
+                            else if ( h.month_day ) display = `${ formatMonthDayPretty( h.month_day ) } (recurring)`;
+                            else display = 'Unknown date';
+                            row.innerHTML = `<div>${ display } — ${ h.name }</div><div style="text-align:right"><button data-id="${ h.id }" class="remove-holiday" title="Remove" style="padding:6px 10px;min-width:auto;background:#f44336;border-color:#f44336"><i class="fas fa-trash"></i></button></div>`;
+                            holList.appendChild( row );
+                        } );
+                    } else
+                    {
+                        holList.innerHTML = '<p>No holidays configured.</p>';
+                    }
+
+                    // Wire up remove buttons
+                    document.querySelectorAll( '.remove-adhoc' ).forEach( btn =>
+                    {
+                        btn.addEventListener( 'click', async ( e ) =>
+                        {
+                            const id = btn.getAttribute( 'data-id' );
+                            const ok = await showAppConfirm( 'Remove this ad-hoc off day?' );
+                            if ( !ok ) return;
+                            try
+                            {
+                                const res = await fetch( '/admin/settings/app/ad-hoc/remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify( { id } ) } );
+                                const body = await res.json();
+                                if ( res.ok && body.success ) { showAppModal( 'Removed.', 'success', () => window.location.reload() ); }
+                                else showAppModal( body.message || 'Failed to remove.', 'error' );
+                            } catch ( e ) { console.error( e ); showAppModal( 'Failed to remove.', 'error' ); }
+                        } );
+                    } );
+
+                    document.querySelectorAll( '.remove-holiday' ).forEach( btn =>
+                    {
+                        btn.addEventListener( 'click', async ( e ) =>
+                        {
+                            const id = btn.getAttribute( 'data-id' );
+                            const ok = await showAppConfirm( 'Remove this holiday?' );
+                            if ( !ok ) return;
+                            try
+                            {
+                                const res = await fetch( '/admin/settings/app/holidays/remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify( { id } ) } );
+                                const body = await res.json();
+                                if ( res.ok && body.success ) { showAppModal( 'Removed.', 'success', () => window.location.reload() ); }
+                                else showAppModal( body.message || 'Failed to remove.', 'error' );
+                            } catch ( e ) { console.error( e ); showAppModal( 'Failed to remove.', 'error' ); }
+                        } );
+                    } );
+
+                    // Save weekly
+                    document.getElementById( 'save-weekly' ).addEventListener( 'click', async () =>
+                    {
+                        const mode = document.getElementById( 'weekly-off-mode' ).value;
+                        const enabled = document.getElementById( 'desktop-enabled' ).checked ? '1' : '0';
+                        try
+                        {
+                            const res = await fetch( '/admin/settings/app', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify( { weekly_off_mode: mode, desktop_enabled: enabled } ) } );
+                            const body = await res.json();
+                            if ( res.ok && body.success ) showAppModal( 'Settings saved.', 'success' ); else showAppModal( body.message || 'Could not save.', 'error' );
+                        } catch ( e ) { console.error( e ); showAppModal( 'Could not save settings.', 'error' ); }
+                    } );
+
+                    // Save timezone
+                    document.getElementById( 'save-timezone' ).addEventListener( 'click', async () =>
+                    {
+                        const timezone = document.getElementById( 'timezone-select' ).value;
+                        try
+                        {
+                            const res = await fetch( '/admin/settings/timezone', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify( { timezone } ) } );
+                            const body = await res.json();
+                            if ( res.ok && body.success ) 
+                            {
+                                showAppModal( 'Timezone updated. All times will now use ' + timezone + '.', 'success' );
+                                setTimeout( () => location.reload(), 1500 );
+                            }
+                            else showAppModal( body.message || 'Could not save timezone.', 'error' );
+                        } catch ( e ) { console.error( e ); showAppModal( 'Could not save timezone.', 'error' ); }
+                    } );
+
+                    // Add adhoc
+                    document.getElementById( 'add-adhoc-form' ).addEventListener( 'submit', async ( e ) =>
+                    {
+                        e.preventDefault();
+                        const date = document.getElementById( 'adhoc-date' ).value;
+                        const reason = document.getElementById( 'adhoc-reason' ).value;
+                        try
+                        {
+                            const res = await fetch( '/admin/settings/app/ad-hoc/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify( { date, reason } ) } );
+                            const body = await res.json();
+                            if ( res.ok && body.success ) { showAppModal( 'Ad-hoc off added.', 'success', () => window.location.reload() ); }
+                            else showAppModal( body.message || 'Could not add ad-hoc off.', 'error' );
+                        } catch ( e ) { console.error( e ); showAppModal( 'Could not add ad-hoc off.', 'error' ); }
+                    } );
+
+                    // Add holiday
+                    document.getElementById( 'add-holiday-form' ).addEventListener( 'submit', async ( e ) =>
+                    {
+                        e.preventDefault();
+                        const name = document.getElementById( 'holiday-name' ).value;
+                        const dateVal = document.getElementById( 'holiday-date' ).value;
+                        const recurring = document.getElementById( 'holiday-recurring' ).checked;
+                        try
+                        {
+                            let payload = { name };
+                            if ( recurring )
+                            {
+                                if ( !dateVal ) { showAppModal( 'Please select a date for the recurring holiday.', 'error' ); return; }
+                                const mm = dateVal.slice( 5, 7 );
+                                const dd = dateVal.slice( 8, 10 );
+                                payload.month_day = `${ mm }-${ dd }`;
+                            } else
+                            {
+                                if ( !dateVal ) { showAppModal( 'Please select a full date for the holiday.', 'error' ); return; }
+                                payload.date = dateVal;
+                            }
+                            const res = await fetch( '/admin/settings/app/holidays/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify( payload ) } );
+                            const body = await res.json();
+                            if ( res.ok && body.success ) { showAppModal( 'Holiday added.', 'success', () => window.location.reload() ); }
+                            else showAppModal( body.message || 'Could not add holiday.', 'error' );
+                        } catch ( e ) { console.error( e ); showAppModal( 'Could not add holiday.', 'error' ); }
+                    } );
+
+                } );
+            </script>
+            <script src="/pwa-size.js"></script>
+            <script src="/ui.js"></script>
+            <script src="/flatpickr.min.js"></script>
+            <script>
+                window.addEventListener( 'load', () =>
+                {
+                    // App settings is owner-only, so always use 'owner' role
+                    initBottomNav( 'appsettings', 'owner' );
+                } );
+            </script>
+    </body>
+
+</html>

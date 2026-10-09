@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="theme-color" content="#0ea5a4">
+        <meta name="description" content="Employee attendance tracking system">
+        <link rel="manifest" href="/manifest.json">
+        <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+        <link rel="apple-touch-icon" href="/icons/icon-192.png">
+        <title>Dashboard</title>
+
+        <link rel="stylesheet" href="/mobile.css">
+        <link rel="stylesheet" href="/flatpickr.min.css">
+        <link rel="stylesheet" href="/airbnb.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+        <!-- Apply branding color immediately to prevent flash -->
+        <script>
+            ( function ()
+            {
+                // Apply cached color instantly (synchronous)
+                const cached = localStorage.getItem( 'brandColor' );
+                if ( cached )
+                {
+                    document.documentElement.style.setProperty( '--brand-color', cached );
+                    document.documentElement.style.setProperty( '--accent', cached );
+                    // Update meta theme-color
+                    const metaTheme = document.querySelector( 'meta[name="theme-color"]' );
+                    if ( metaTheme ) metaTheme.setAttribute( 'content', cached );
+                }
+
+                // Fetch and update cache (async, non-blocking)
+                fetch( '/branding' ).then( res => res.json() ).then( data =>
+                {
+                    if ( data.brandColor )
+                    {
+                        localStorage.setItem( 'brandColor', data.brandColor );
+                        if ( data.brandColor !== cached )
+                        {
+                            document.documentElement.style.setProperty( '--brand-color', data.brandColor );
+                            document.documentElement.style.setProperty( '--accent', data.brandColor );
+                            // Update meta theme-color
+                            const metaTheme = document.querySelector( 'meta[name="theme-color"]' );
+                            if ( metaTheme ) metaTheme.setAttribute( 'content', data.brandColor );
+                        }
+                    }
+                } ).catch( () => { } );
+            } )();
+        </script>
+    </head>
+
+    <body>
+        <div></div>
+
+        <!-- Global app modal is injected by /ui.js -->
+
+
+        <div class="container">
+            <h1 style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                <i class="fas fa-th-large"></i> Dashboard
+                <img class="nav-avatar" id="header-avatar" src="/default-avatar.svg" alt="Profile"
+                    style="display:none;margin-left:auto">
+                <span style="font-size:0.9rem;font-weight:normal">
+                    Welcome, <strong id="profile-name"></strong>! (<span id="profile-role"></span>)
+                </span>
+            </h1>
+            <p style="color:#666;font-size:0.9rem;margin-top:4px;">
+                <i class="fas fa-calendar-day"></i> <span id="current-datetime"></span>
+            </p>
+
+            <!-- Attendance Marking Section -->
+            <div class="section" id="attendance-section">
+                <h2><i class="fas fa-clock"></i> Your Daily Check-In</h2>
+                <div id="loading-message">
+                    <p><i class="fas fa-spinner fa-spin"></i> Getting things ready for you...</p>
+                </div>
+                <div id="permission-denied-message" style="display: none;">
+                    <p><i class="fas fa-exclamation-triangle"></i> We need your camera and location to verify your
+                        check-in. Please allow access and try again. 📍📷</p>
+                </div>
+                <div id="day-complete-message" style="display: none;">
+                    <p id="attendance-notice" aria-live="polite"
+                        style="margin:0;padding:0;font-weight:normal;color:#333;"></p>
+                </div>
+                <video id="video" width="400" height="300" autoplay style="display: none;"></video>
+                <canvas id="canvas" width="400" height="300" style="display: none;"></canvas>
+                <form id="attendance-form" method="post" style="display: none;">
+                    <input type="hidden" id="latitude" name="latitude">
+                    <input type="hidden" id="longitude" name="longitude">
+                    <input type="hidden" id="selfie" name="selfie">
+                    <button type="submit" id="action-button"></button>
+                </form>
+            </div>
+
+            <!-- Leave Management Section -->
+            <div class="section">
+                <h2 style="margin-bottom:8px"><i class="fas fa-umbrella-beach"></i> Time Off Requests</h2>
+                <p style="margin:0 0 8px 0"><strong>Your Available Days Off:</strong> <span
+                        id="leave-balance">Loading...</span> days</p>
+                <hr style="margin:8px 0">
+                <form id="leave-application-form" action="/leaves/apply" method="post">
+                    <h3 style="margin:0 0 8px 0">Request Time Off</h3>
+                    <label for="start_date"><i class="fas fa-calendar-day"></i> Start Date:</label>
+                    <input type="date" id="start_date" name="start_date" required>
+                    <label for="end_date"><i class="fas fa-calendar-day"></i> End Date:</label>
+                    <input type="date" id="end_date" name="end_date" required>
+                    <label><i class="fas fa-clock"></i> Leave Type:</label>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:inline-block;margin-right:20px;font-weight:normal;">
+                            <input type="radio" name="leave_type" value="full" checked style="margin-right:5px;">
+                            Full Day
+                        </label>
+                        <label style="display:inline-block;font-weight:normal;">
+                            <input type="radio" name="leave_type" value="half" style="margin-right:5px;">
+                            Half Day
+                        </label>
+                    </div>
+                    <label for="reason"><i class="fas fa-comment"></i> Reason:</label>
+                    <textarea id="reason" name="reason" rows="3" cols="40" maxlength="250" required
+                        style="resize:none"></textarea>
+                    <div style="font-size:12px;color:#666;margin-top:2px">Maximum 250 characters. Note: Half-day leaves
+                        can only be applied for a single day.</div>
+                    <button type="submit" style="margin-top:8px"><i class="fas fa-paper-plane"></i> Send
+                        Request</button>
+                </form>
+                <hr style="margin:10px 0">
+                <h3 style="margin-bottom:8px">My Time Off History</h3>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Type</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Actioned By</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaves-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- personal change-password is available at /profile (header link) -->
+
+            <!-- Attendance Records Section -->
+            <div class="section">
+                <h2><i class="fas fa-history"></i> Your Check-In History</h2>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>In Time</th>
+                                <th>In Location</th>
+                                <th>In Selfie</th>
+                                <th>Out Time</th>
+                                <th>Out Location</th>
+                                <th>Out Selfie</th>
+                                <th>Total Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-body">
+                            <tr>
+                                <td colspan="8">Loading records...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Spacer to ensure content clears bottom navbar -->
+            <div class="bottom-spacer"></div>
+        </div>
+
+        <script>
+
+            window.addEventListener( 'load', async () =>
+            {
+                // Fetch current user's info
+                const userRes = await fetch( '/user/me' );
+                const currentUser = await userRes.json();
+                document.getElementById( 'profile-name' ).textContent = currentUser.displayName || currentUser.name;
+                document.getElementById( 'profile-role' ).textContent = ( currentUser.role || '' ).replace( '_', ' ' );
+
+                // Branding (avatar/logo)
+                if ( window.applyBranding ) window.applyBranding();
+
+                // Get timezone from user data (server provides it)
+                const timezone = currentUser.timezone || 'Asia/Kolkata';
+
+                // Display current date and time using server's effective date and time
+                function updateDateTime ()
+                {
+                    // Re-fetch user data to get current server time
+                    fetch( '/user/me' )
+                        .then( res => res.json() )
+                        .then( data =>
+                        {
+                            // Parse server's current datetime
+                            const serverTime = new Date( data.currentDateTime );
+
+                            const options = {
+                                timeZone: timezone,
+                                weekday: 'long',
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                hour12: true
+                            };
+                            const formatter = new Intl.DateTimeFormat( 'en-GB', options );
+                            const parts = formatter.formatToParts( serverTime );
+
+                            const weekday = parts.find( p => p.type === 'weekday' ).value;
+                            const day = parts.find( p => p.type === 'day' ).value;
+                            const month = parts.find( p => p.type === 'month' ).value;
+                            const year = parts.find( p => p.type === 'year' ).value;
+                            const hour = parts.find( p => p.type === 'hour' ).value;
+                            const minute = parts.find( p => p.type === 'minute' ).value;
+                            const dayPeriod = parts.find( p => p.type === 'dayPeriod' );
+                            const ampm = dayPeriod ? dayPeriod.value.toUpperCase() : '';
+
+                            // Get timezone abbreviation or UTC offset
+                            let tzAbbr = '';
+                            try
+                            {
+                                const tzString = serverTime.toLocaleString( 'en-US', { timeZone: timezone, timeZoneName: 'short' } );
+                                const match = tzString.match( /\b([A-Z]{2,5})\b$/ );
+                                if ( match ) tzAbbr = match[ 1 ];
+                            } catch ( e ) { /* detection failed */ }
+
+                            // If detection failed, show UTC offset (e.g., UTC+5:30)
+                            if ( !tzAbbr )
+                            {
+                                const offsetMinutes = -serverTime.getTimezoneOffset();
+                                const offsetHours = Math.floor( Math.abs( offsetMinutes ) / 60 );
+                                const offsetMins = Math.abs( offsetMinutes ) % 60;
+                                const sign = offsetMinutes >= 0 ? '+' : '-';
+                                tzAbbr = `UTC${ sign }${ offsetHours }${ offsetMins > 0 ? ':' + String( offsetMins ).padStart( 2, '0' ) : '' }`;
+                            }
+
+                            const dateTimeString = `Today is ${ weekday }, ${ day }-${ month }-${ year } (${ tzAbbr }), ${ hour }:${ minute } ${ ampm }`;
+                            document.getElementById( 'current-datetime' ).textContent = dateTimeString;
+                        } )
+                        .catch( err =>
+                        {
+                            console.error( 'Error fetching server time:', err );
+                        } );
+                }
+
+                // Initial update and set interval to update every minute
+                updateDateTime();
+                setInterval( updateDateTime, 60000 );
+
+                // Load all parts of the dashboard
+                loadAttendanceMarker( currentUser );
+                loadAttendanceHistory();
+                loadLeaveHistory();
+                loadLeaveBalance();
+            } );
+
+            async function loadAttendanceMarker ( currentUser )
+            {
+                if ( currentUser.role === 'owner' ) return; // Owner doesn't mark attendance
+
+                const loadingMessage = document.getElementById( 'loading-message' );
+                const permissionDeniedMessage = document.getElementById( 'permission-denied-message' );
+                const dayCompleteMessage = document.getElementById( 'day-complete-message' );
+                const form = document.getElementById( 'attendance-form' );
+                const actionButton = document.getElementById( 'action-button' );
+                const video = document.getElementById( 'video' );
+                const canvas = document.getElementById( 'canvas' );
+                let stream = null;
+                let idleTimer = null;
+                let hiddenStopTimer = null;
+
+                // Single-action button flow (no file upload):
+                // The existing `actionButton` is used for both opening the camera and capturing.
+                // Initial caption will be 'Open Camera'. After opening, it becomes 'Mark In' or 'Mark Out'.
+                let pendingAction = null; // '/mark-in' or '/mark-out'
+
+                // Helper to set the 'open camera' caption according to the pending action
+                function setOpenCaption ()
+                {
+                    if ( pendingAction === '/mark-in' ) actionButton.innerHTML = '<i class="fas fa-camera"></i> Ready to Check In?';
+                    else if ( pendingAction === '/mark-out' ) actionButton.innerHTML = '<i class="fas fa-camera"></i> Time to Check Out?';
+                    else actionButton.innerHTML = '<i class="fas fa-camera"></i> Open Camera';
+                }
+
+                setOpenCaption();
+
+                // Utility: set idle timer to close camera after 20s of inactivity
+                function resetIdleTimer ()
+                {
+                    if ( idleTimer ) clearTimeout( idleTimer );
+                    idleTimer = setTimeout( () => { stopStream(); }, 5000 );
+                }
+
+                // Open camera on demand
+                async function openCamera ()
+                {
+                    try
+                    {
+                        // If already open, just reset timer
+                        if ( stream )
+                        {
+                            resetIdleTimer();
+                            return;
+                        }
+
+                        // Show loading feedback
+                        actionButton.disabled = true;
+                        actionButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Opening camera...';
+
+                        video.style.display = 'block';
+                        const s = await navigator.mediaDevices.getUserMedia( {
+                            video: {
+                                facingMode: 'user',
+                                width: { ideal: 640 },
+                                height: { ideal: 480 }
+                            }
+                        } );
+                        stream = s;
+                        video.srcObject = stream;
+
+                        // Wait for first usable frame with longer timeout for mobile
+                        await new Promise( resolve =>
+                        {
+                            let settled = false;
+                            function done () { if ( settled ) return; settled = true; cleanup(); resolve(); }
+                            function cleanup ()
+                            {
+                                video.removeEventListener( 'playing', done );
+                                video.removeEventListener( 'loadeddata', done );
+                                video.removeEventListener( 'canplay', done );
+                                clearTimeout( timer );
+                            }
+                            video.addEventListener( 'playing', done );
+                            video.addEventListener( 'loadeddata', done );
+                            video.addEventListener( 'canplay', done );
+                            const timer = setTimeout( () => { done(); }, 3000 ); // Increased timeout for mobile
+                        } );
+
+                        // Re-enable button and update text
+                        actionButton.disabled = false;
+                        if ( pendingAction === '/mark-in' ) actionButton.innerHTML = '<i class="fas fa-check-circle"></i> Check In';
+                        else if ( pendingAction === '/mark-out' ) actionButton.innerHTML = '<i class="fas fa-sign-out-alt"></i> Check Out';
+
+                        resetIdleTimer();
+                    } catch ( e )
+                    {
+                        console.error( 'Could not open camera', e );
+                        actionButton.disabled = false;
+                        setOpenCaption();
+                        showModal( 'We can\'t access your camera. Please allow camera access in your browser settings.', 'error' );
+                    }
+                }
+
+                function stopStream ()
+                {
+                    try
+                    {
+                        if ( idleTimer ) { clearTimeout( idleTimer ); idleTimer = null; }
+                        if ( hiddenStopTimer ) { clearTimeout( hiddenStopTimer ); hiddenStopTimer = null; }
+                        if ( stream )
+                        {
+                            stream.getTracks().forEach( t => { try { t.stop(); } catch ( e ) { /* ignore */ } } );
+                            stream = null;
+                        }
+                        video.srcObject = null;
+                        video.style.display = 'none';
+                        // Reset action button caption to the 'open camera' instruction for the pending action
+                        if ( pendingAction === '/mark-in' ) actionButton.innerHTML = '<i class="fas fa-camera"></i> Ready to Check In?';
+                        else if ( pendingAction === '/mark-out' ) actionButton.innerHTML = '<i class="fas fa-camera"></i> Time to Check Out?';
+                    } catch ( e ) { console.error( 'Error stopping stream', e ); }
+                }
+
+                // Capture image from video to dataURL
+                function captureFromVideo ()
+                {
+                    const ctx = canvas.getContext( '2d' );
+                    // Use natural video size if available else fallback
+                    const w = video.videoWidth || 400;
+                    const h = video.videoHeight || 300;
+                    canvas.width = w;
+                    canvas.height = h;
+                    ctx.drawImage( video, 0, 0, w, h );
+                    return canvas.toDataURL( 'image/jpeg', 0.7 );
+                }
+
+                // Validate dataURL is not blank/too-small
+                function validateDataUrl ( dataUrl )
+                {
+                    if ( !dataUrl || typeof dataUrl !== 'string' ) return false;
+                    // Simple length check (reject tiny images)
+                    if ( dataUrl.length < 5000 ) return false;
+                    // Further pixel-sample test (optional, lightweight)
+                    try
+                    {
+                        const tmpImg = new Image();
+                        // synchronous canvas check: draw into canvas and sample pixels
+                        // Since Image loads asynchronously, use a quick heuristic instead: ensure base64 payload exists
+                        const base64 = dataUrl.split( ',' )[ 1 ] || '';
+                        if ( base64.length < 2000 ) return false;
+                        return true;
+                    } catch ( e ) { return true; }
+                }
+
+                // No file-upload fallback: captures must be from live camera.
+
+                // Don't auto-acquire camera on load — only get geolocation and status
+                // Fetch status FIRST to determine if we need geolocation
+
+                let hasGeoPermission = false;
+                let position = null;
+                let geoErrorCode = null;
+                let status = null;
+                let offMessage = '';
+
+                // Fetch status first (fast)
+                try
+                {
+                    const statusResponse = await fetch( '/attendance/status' );
+                    if ( statusResponse && statusResponse.ok )
+                    {
+                        const statusData = await statusResponse.json();
+                        status = statusData && statusData.status ? statusData.status : null;
+                        offMessage = statusData && statusData.message ? statusData.message : '';
+                    }
+                } catch ( fetchErr )
+                {
+                    console.error( 'Error fetching status:', fetchErr );
+                }
+
+                // Clear any previous notice
+                const noticeEl = document.getElementById( 'attendance-notice' );
+                if ( noticeEl ) noticeEl.textContent = '';
+
+                // If status is 'marked_out' or 'off', we don't need geolocation - show UI immediately
+                if ( status === 'marked_out' )
+                {
+                    loadingMessage.style.display = 'none';
+                    if ( noticeEl ) noticeEl.innerHTML = '<i class="fas fa-check-circle" style="color:#16a34a"></i> All done for today! 🎉 Great job!';
+                    dayCompleteMessage.style.display = 'block';
+                    form.style.display = 'none';
+                    video.style.display = 'none';
+                    canvas.style.display = 'none';
+                    try { stopStream(); } catch ( e ) { /* ignore */ }
+                    pendingAction = null;
+                    setOpenCaption();
+                    actionButton.disabled = true;
+                    return; // Exit early - no geolocation needed
+                }
+
+                if ( status === 'off' )
+                {
+                    loadingMessage.style.display = 'none';
+                    if ( noticeEl ) noticeEl.innerHTML = '<i class="fas fa-calendar-check" style="color:#0ea5a4"></i> ' + ( offMessage || 'Enjoy your day off! 😊' );
+                    dayCompleteMessage.style.display = 'block';
+                    form.style.display = 'none';
+                    video.style.display = 'none';
+                    canvas.style.display = 'none';
+                    try { stopStream(); } catch ( e ) { /* ignore */ }
+                    pendingAction = null;
+                    setOpenCaption();
+                    actionButton.disabled = true;
+                    return; // Exit early - no geolocation needed
+                }
+
+                // Only fetch geolocation if we need it (for marking in/out)
+                try
+                {
+                    position = await new Promise( ( resolve, reject ) =>
+                    {
+                        navigator.geolocation.getCurrentPosition( resolve, reject, {
+                            timeout: 15000,
+                            maximumAge: 300000, // Can use cached location up to 5 minutes
+                            enableHighAccuracy: false // Faster on mobile
+                        } );
+                    } );
+                    hasGeoPermission = true;
+                    document.getElementById( 'latitude' ).value = position.coords.latitude;
+                    document.getElementById( 'longitude' ).value = position.coords.longitude;
+                } catch ( geoError )
+                {
+                    console.error( 'Geolocation error:', geoError );
+                    geoErrorCode = geoError.code; // 1=PERMISSION_DENIED, 2=POSITION_UNAVAILABLE, 3=TIMEOUT
+                    hasGeoPermission = ( geoError.code !== 1 ); // Code 1 is PERMISSION_DENIED
+                }
+
+                // Hide loading message first
+                loadingMessage.style.display = 'none';
+
+                // Only show permission error if it's actually a permission denied error (code 1)
+                if ( geoErrorCode === 1 && status && ( status === 'not_marked_in' || status === 'marked_in' ) )
+                {
+                    permissionDeniedMessage.style.display = 'block';
+                    return;
+                }
+
+                // If geolocation failed but not due to permission (timeout/unavailable), 
+                // show a helpful message but still allow proceeding
+                if ( !position && status && ( status === 'not_marked_in' || status === 'marked_in' ) )
+                {
+                    if ( geoErrorCode === 3 ) // TIMEOUT
+                    {
+                        showModal( 'Location is taking longer than usual. You may proceed, but make sure you are at the correct location.', 'error' );
+                    } else if ( geoErrorCode === 2 ) // POSITION_UNAVAILABLE
+                    {
+                        showModal( 'Unable to get precise location. Make sure GPS is enabled and you have a clear view of the sky.', 'error' );
+                    }
+                    // Still allow user to proceed even without exact location
+                    // Set dummy coordinates that server can detect
+                    if ( !document.getElementById( 'latitude' ).value )
+                    {
+                        document.getElementById( 'latitude' ).value = '0';
+                        document.getElementById( 'longitude' ).value = '0';
+                    }
+                }
+
+                // Handle different attendance states
+                if ( !status )
+                {
+                    // Fallback: allow user to attempt marking in
+                    if ( geoErrorCode !== 1 ) // Not a permission error
+                    {
+                        form.action = '/mark-in';
+                        pendingAction = '/mark-in';
+                        setOpenCaption();
+                        form.style.display = 'block';
+                        actionButton.disabled = false;
+                        video.style.display = 'none';
+                        canvas.style.display = 'none';
+                    } else
+                    {
+                        permissionDeniedMessage.style.display = 'block';
+                    }
+                }
+                else if ( status === 'not_marked_in' )
+                {
+                    dayCompleteMessage.style.display = 'none';
+                    form.action = '/mark-in';
+                    pendingAction = '/mark-in';
+                    setOpenCaption();
+                    form.style.display = 'block';
+                    video.style.display = 'none';
+                    canvas.style.display = 'none';
+                    actionButton.disabled = false;
+                } else if ( status === 'marked_in' )
+                {
+                    dayCompleteMessage.style.display = 'none';
+                    form.action = '/mark-out';
+                    pendingAction = '/mark-out';
+                    setOpenCaption();
+                    form.style.display = 'block';
+                    video.style.display = 'none';
+                    canvas.style.display = 'none';
+                    actionButton.disabled = false;
+                }
+                // marked_out and off cases are handled above with early return
+                // Single-button behavior: click opens camera (if closed) or captures & submits (if open)
+                actionButton.addEventListener( 'click', async ( ev ) =>
+                {
+                    ev.preventDefault();
+                    try
+                    {
+                        // If camera is not open, open and change caption to action
+                        if ( !stream )
+                        {
+                            await openCamera();
+                            // Caption is already updated inside openCamera
+                            return;
+                        }
+
+                        // Camera is open: capture and submit
+                        if ( video.readyState < 2 || video.videoWidth === 0 )
+                        {
+                            showModal( 'Camera is warming up. Please wait a moment and try again.', 'error' );
+                            return;
+                        }
+
+                        // Disable button during capture/submit
+                        actionButton.disabled = true;
+                        actionButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving your check-in...';
+
+                        const dataUrl = captureFromVideo();
+                        if ( !validateDataUrl( dataUrl ) )
+                        {
+                            actionButton.disabled = false;
+                            if ( pendingAction === '/mark-in' ) actionButton.innerHTML = '<i class="fas fa-check-circle"></i> Check In';
+                            else if ( pendingAction === '/mark-out' ) actionButton.innerHTML = '<i class="fas fa-sign-out-alt"></i> Check Out';
+                            showModal( 'Hmm, that photo didn\'t come through. Let\'s try taking another one. 📷', 'error' );
+                            return;
+                        }
+
+                        document.getElementById( 'selfie' ).value = dataUrl;
+                        // stop camera after successful capture
+                        stopStream();
+
+                        // Submit via AJAX so we can show a modal confirmation instead of full redirect
+                        try
+                        {
+                            const payload = {
+                                latitude: document.getElementById( 'latitude' ).value,
+                                longitude: document.getElementById( 'longitude' ).value,
+                                selfie: dataUrl
+                            };
+                            const resp = await fetch( form.action, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                },
+                                body: JSON.stringify( payload )
+                            } );
+                            const result = await resp.json();
+
+                            actionButton.disabled = false;
+
+                            // Check if pending leave confirmation is required
+                            if ( resp.status === 409 && result.requiresConfirmation )
+                            {
+                                // User has pending leave, ask for confirmation
+                                const confirmWithdraw = await showAppConfirm(
+                                    'You have a pending leave request for today.\n\nIf you mark attendance, your leave request will be automatically withdrawn.\n\nDo you want to continue?',
+                                    'No, Keep My Leave',
+                                    'Yes, Mark Attendance'
+                                );
+
+                                if ( confirmWithdraw )
+                                {
+                                    // User confirmed, resubmit with confirmation flag
+                                    payload.confirm_withdraw = result.leave_id;
+                                    const retryResp = await fetch( form.action, {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-Requested-With': 'XMLHttpRequest'
+                                        },
+                                        body: JSON.stringify( payload )
+                                    } );
+                                    const retryResult = await retryResp.json();
+
+                                    if ( retryResp.ok && retryResult.success )
+                                    {
+                                        showModal( retryResult.message || 'Action completed.', 'success', async () =>
+                                        {
+                                            await loadAttendanceHistory();
+                                            await loadLeaveHistory(); // Refresh leave history too
+                                            if ( pendingAction === '/mark-in' )
+                                            {
+                                                form.action = '/mark-out';
+                                                pendingAction = '/mark-out';
+                                                setOpenCaption();
+                                                actionButton.disabled = false;
+                                            }
+                                        } );
+                                    } else
+                                    {
+                                        setOpenCaption();
+                                        showModal( retryResult.message || 'Could not complete action.', 'error' );
+                                    }
+                                } else
+                                {
+                                    // User cancelled, reset UI
+                                    setOpenCaption();
+                                }
+                                return;
+                            }
+
+                            if ( resp.ok && result.success )
+                            {
+                                showModal( result.message || 'Action completed.', 'success', async () =>
+                                {
+                                    // Refresh only attendance history, not entire marker
+                                    await loadAttendanceHistory();
+                                    // Update UI state based on what was just done
+                                    if ( pendingAction === '/mark-in' )
+                                    {
+                                        // Just marked in, now show mark out option
+                                        form.action = '/mark-out';
+                                        pendingAction = '/mark-out';
+                                        setOpenCaption();
+                                        actionButton.disabled = false;
+                                    } else if ( pendingAction === '/mark-out' )
+                                    {
+                                        // Just marked out, show completion message
+                                        const noticeEl = document.getElementById( 'attendance-notice' );
+                                        if ( noticeEl ) noticeEl.innerHTML = '<i class="fas fa-check-circle" style="color:#16a34a"></i> All done for today! 🎉 Great job!';
+                                        dayCompleteMessage.style.display = 'block';
+                                        form.style.display = 'none';
+                                        pendingAction = null;
+                                        actionButton.disabled = true;
+                                    }
+                                } );
+                            } else
+                            {
+                                setOpenCaption();
+                                showModal( result.message || 'Could not complete action.', 'error' );
+                            }
+                        } catch ( ex )
+                        {
+                            console.error( ex );
+                            actionButton.disabled = false;
+                            setOpenCaption();
+                            showModal( 'An unexpected error occurred while submitting attendance.', 'error' );
+                        }
+                    } catch ( err )
+                    {
+                        console.error( 'Error during action button flow', err );
+                        actionButton.disabled = false;
+                        setOpenCaption();
+                        showModal( 'We couldn\'t capture your selfie. Please try again.', 'error' );
+                    }
+                } );
+
+                // Visibility handling: stop camera after 20s of being hidden
+                document.addEventListener( 'visibilitychange', () =>
+                {
+                    if ( document.hidden )
+                    {
+                        if ( hiddenStopTimer ) clearTimeout( hiddenStopTimer );
+                        hiddenStopTimer = setTimeout( () => { stopStream(); }, 5000 );
+                    } else
+                    {
+                        if ( hiddenStopTimer ) { clearTimeout( hiddenStopTimer ); hiddenStopTimer = null; }
+                        // do not auto-reopen camera on visibilitychange — user action required
+                    }
+                } );
+
+                // Ensure camera is stopped when the page is being unloaded
+                window.addEventListener( 'pagehide', stopStream );
+                window.addEventListener( 'beforeunload', stopStream );
+            }
+
+            async function loadAttendanceHistory ()
+            {
+                const res = await fetch( '/attendance' );
+                const attendance = await res.json();
+                const tbody = document.getElementById( 'attendance-body' );
+                tbody.innerHTML = '';
+                if ( attendance.length === 0 )
+                {
+                    tbody.innerHTML = '<tr><td colspan="8"><i class="fas fa-info-circle"></i> No check-ins yet. Your history will appear here.</td></tr>';
+                    return;
+                }
+                attendance.forEach( row =>
+                {
+                    const tr = document.createElement( 'tr' );
+                    tr.innerHTML = `
+                    <td>${ row.date }</td>
+                    <td>${ row.in_time || '' }</td>
+                    <td>${ row.in_latitude ? `<a href="https://www.google.com/maps/search/?api=1&query=${ row.in_latitude },${ row.in_longitude }" target="_blank" rel="noopener noreferrer">${ row.in_latitude.toFixed( 4 ) }, ${ row.in_longitude.toFixed( 4 ) }</a>` : '' }</td>
+                    <td>${ row.in_selfie_path ? `<img src="${ row.in_selfie_path }" width="100" class="selfie-thumbnail" style="cursor:pointer;border-radius:4px;" data-selfie-src="${ row.in_selfie_path }" data-selfie-type="Check-in selfie" title="Click to view full size">` : '' }</td>
+                    <td>${ row.out_time || '' }</td>
+                    <td>${ row.out_latitude ? `<a href="https://www.google.com/maps/search/?api=1&query=${ row.out_latitude },${ row.out_longitude }" target="_blank" rel="noopener noreferrer">${ row.out_latitude.toFixed( 4 ) }, ${ row.out_longitude.toFixed( 4 ) }</a>` : '' }</td>
+                    <td>${ row.out_selfie_path ? `<img src="${ row.out_selfie_path }" width="100" class="selfie-thumbnail" style="cursor:pointer;border-radius:4px;" data-selfie-src="${ row.out_selfie_path }" data-selfie-type="Check-out selfie" title="Click to view full size">` : '' }</td>
+                    <td>${ row.total_time || '' }</td>
+                `;
+                    tbody.appendChild( tr );
+                } );
+            }
+
+            async function loadLeaveHistory ()
+            {
+                const res = await fetch( '/leaves' );
+                const leaves = await res.json();
+                const tbody = document.getElementById( 'leaves-body' );
+                tbody.innerHTML = '';
+                if ( leaves.length === 0 )
+                {
+                    tbody.innerHTML = '<tr><td colspan="6"><i class="fas fa-info-circle"></i> No time off requests yet.</td></tr>';
+                    return;
+                }
+                leaves.forEach( leave =>
+                {
+                    const tr = document.createElement( 'tr' );
+                    const reasonPreview = leave.reason_truncated || ( leave.reason || '' );
+                    const fullReason = leave.reason_full || ( leave.reason || '' );
+                    let previewForDisplay = reasonPreview;
+                    if ( previewForDisplay && previewForDisplay.endsWith( '...' ) ) previewForDisplay = previewForDisplay.slice( 0, -3 );
+                    const reasonHtml = fullReason && fullReason.length > 25
+                        ? `${ escapeHtml( previewForDisplay ) } <a href="#" class="show-reason" data-full="${ escapeHtmlAttr( fullReason ) }">...</a>`
+                        : escapeHtml( previewForDisplay );
+
+                    const leaveType = ( leave.leave_type || 'full' ) === 'half' ? 'Half' : 'Full';
+                    const leaveTypeBadge = leaveType === 'Half'
+                        ? '<span style="background:#f3e8ff;color:#6b21a8;padding:2px 6px;border-radius:3px;font-size:11px;font-weight:600;">HALF</span>'
+                        : '<span style="background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:3px;font-size:11px;font-weight:600;">FULL</span>';
+
+                    // Flags and actions
+                    const flags = [];
+                    if ( leave.is_backdated ) flags.push( '<span title="Backdated request" style="font-size:12px;color:#666;margin-right:6px;">(backdated)</span>' );
+                    // Avoid duplicate 'withdrawn' text if the status already contains it
+                    if ( leave.taken_back && leave.status !== 'withdrawn' ) flags.push( '<span title="Taken back" style="font-size:12px;color:#999;margin-right:6px;">(withdrawn)</span>' );
+
+                    // Show take-back button for pending requests that are not yet taken back
+                    let actionHtml = '';
+                    if ( leave.status === 'pending' && !leave.taken_back )
+                    {
+                        actionHtml = `<button class="takeback-button" data-id="${ leave.leave_id }" title="Withdraw" style="padding:6px 10px;min-width:auto;background:#ff9800;border-color:#ff9800"><i class="fas fa-undo"></i></button>`;
+                    }
+
+                    tr.innerHTML = `
+                    <td>${ leave.start_date }</td>
+                    <td>${ leave.end_date }</td>
+                    <td>${ leaveTypeBadge }</td>
+                    <td>${ reasonHtml }</td>
+                    <td class="status-${ leave.status }">${ leave.status } ${ flags.join( ' ' ) }</td>
+                    <td>${ leave.approved_by || '' }</td>
+                    <td>${ actionHtml }</td>
+                `;
+                    tbody.appendChild( tr );
+                } );
+
+                // Wire up take-back buttons
+                document.querySelectorAll( '.takeback-button' ).forEach( btn =>
+                {
+                    btn.addEventListener( 'click', async ( e ) =>
+                    {
+                        const id = btn.getAttribute( 'data-id' );
+                        // Use modal confirmation for consistency
+                        let confirmed = false;
+                        if ( window.showAppConfirm ) confirmed = await window.showAppConfirm( 'Want to withdraw this request? You can reapply anytime.' );
+                        else confirmed = confirm( 'Want to withdraw this request? You can reapply anytime.' );
+                        if ( !confirmed ) return;
+                        try
+                        {
+                            const resp = await fetch( '/leaves/takeback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify( { leave_id: id } ) } );
+                            const result = await resp.json();
+                            if ( result.success )
+                            {
+                                showModal( result.message, 'success', () =>
+                                {
+                                    loadLeaveHistory();
+                                    loadLeaveBalance();
+                                } );
+                            } else
+                            {
+                                showModal( result.message || 'Could not take back leave.', 'error', () =>
+                                {
+                                    loadLeaveHistory();
+                                    loadLeaveBalance();
+                                } );
+                            }
+                        } catch ( ex )
+                        {
+                            console.error( ex );
+                            showModal( 'Something went wrong while withdrawing your request. Please try again.', 'error', () =>
+                            {
+                                loadLeaveHistory();
+                                loadLeaveBalance();
+                            } );
+                        }
+                    } );
+                } );
+            }
+
+
+            // Utility: escape HTML to prevent injection
+            function escapeHtml ( str )
+            {
+                if ( !str ) return '';
+                return str.replace( /&/g, '&amp;' ).replace( /</g, '&lt;' ).replace( />/g, '&gt;' ).replace( /"/g, '&quot;' ).replace( /'/g, '&#39;' );
+            }
+
+            function escapeHtmlAttr ( str )
+            {
+                return escapeHtml( str ).replace( /"/g, '&quot;' );
+            }
+
+            // Format ISO YYYY-MM-DD to friendly display like 24-November-2025
+            function formatIsoDateNice ( iso )
+            {
+                if ( !iso ) return '';
+                // Use Date with explicit midnight to avoid timezone shifts
+                const d = new Date( iso + 'T00:00:00' );
+                if ( isNaN( d.getTime() ) ) return iso;
+                const months = [ 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December' ];
+                return `${ d.getDate() }-${ months[ d.getMonth() ] }-${ d.getFullYear() }`;
+            }
+
+            // Delegate click for reason preview links
+            document.addEventListener( 'click', ( e ) =>
+            {
+                const target = e.target;
+                if ( target && target.classList && target.classList.contains( 'show-reason' ) )
+                {
+                    e.preventDefault();
+                    const full = target.getAttribute( 'data-full' ) || '';
+                    showModal( full, 'info' );
+                }
+            } );
+            async function loadLeaveBalance ()
+            {
+                const res = await fetch( '/leaves/balance' );
+                const { balance } = await res.json();
+                document.getElementById( 'leave-balance' ).textContent = balance;
+            }
+
+            // Modal wrapper: use shared `showAppModal` when available to ensure consistent positioning
+            function showModal ( message, type, onClose )
+            {
+                if ( window.showAppModal )
+                {
+                    window.showAppModal( message, type, onClose );
+                    return;
+                }
+                // Fallback for very old pages: simple alert
+                alert( message );
+                if ( typeof onClose === 'function' )
+                {
+                    try { onClose(); } catch ( e ) { /* ignore */ }
+                }
+            }
+
+            // Personal change-password moved to /profile to avoid duplication across pages.
+
+            document.addEventListener( 'DOMContentLoaded', () =>
+            {
+                const leaveForm = document.getElementById( 'leave-application-form' );
+
+                if ( leaveForm )
+                {
+                    leaveForm.addEventListener( 'submit', async ( event ) =>
+                    {
+                        event.preventDefault(); // Prevent default form submission
+
+                        const formData = new FormData( leaveForm );
+                        const data = Object.fromEntries( formData.entries() );
+                        const start = data.start_date;
+                        const end = data.end_date;
+                        const leaveType = data.leave_type || 'full';
+
+                        // Client-side: Date order check
+                        if ( !start || !end ) { showModal( 'Please select both start and end dates.', 'error' ); return; }
+                        if ( new Date( start ) > new Date( end ) ) { showModal( 'Your start date should be before the end date.', 'error' ); return; }
+
+                        // Half-day validation
+                        if ( leaveType === 'half' && start !== end )
+                        {
+                            showModal( 'Half-day leaves can only be applied for a single day. Please select the same start and end date.', 'error' );
+                            return;
+                        }
+
+                        try
+                        {
+                            // Only check attendance overlap for FULL-DAY leaves
+                            // Half-day leaves can coexist with attendance
+                            if ( leaveType === 'full' )
+                            {
+                                // Fetch attendance dates and check if any date in range has attendance
+                                const attRes = await fetch( '/attendance/dates' );
+                                const attDates = await attRes.json(); // array of YYYY-MM-DD strings
+
+                                // generate set of dates in range
+                                function datesInRange ( s, e )
+                                {
+                                    const arr = [];
+                                    let cur = new Date( s );
+                                    const endd = new Date( e );
+                                    while ( cur <= endd )
+                                    {
+                                        arr.push( cur.toISOString().slice( 0, 10 ) );
+                                        cur.setDate( cur.getDate() + 1 );
+                                    }
+                                    return arr;
+                                }
+
+                                const requested = datesInRange( start, end );
+                                const presentOverlap = requested.filter( d => attDates.indexOf( d ) !== -1 );
+                                if ( presentOverlap.length > 0 )
+                                {
+                                    const pretty = presentOverlap.map( d => formatIsoDateNice( d ) ).join( ', ' );
+                                    showModal( `You were present on: ${ pretty }. You can't request time off for days you've already worked.`, 'error' );
+                                    return;
+                                }
+                            }
+
+                            // Fetch raw leaves to check overlap
+                            const rawRes = await fetch( '/leaves/raw' );
+                            const rawLeaves = await rawRes.json();
+                            const overlap = rawLeaves.some( rl =>
+                            {
+                                // ignore withdrawn and rejected requests when checking overlap (server now ignores rejected too)
+                                if ( rl.status === 'withdrawn' || rl.status === 'rejected' ) return false;
+                                const aStart = new Date( rl.start_date );
+                                const aEnd = new Date( rl.end_date );
+                                const reqStart = new Date( start );
+                                const reqEnd = new Date( end );
+                                return !( aEnd < reqStart || aStart > reqEnd );
+                            } );
+                            if ( overlap )
+                            {
+                                showModal( 'You already have a request for these dates.', 'error' );
+                                return;
+                            }
+
+                            // All client-side checks passed — submit to server
+                            const response = await fetch( '/leaves/apply', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify( data )
+                            } );
+
+                            const result = await response.json();
+
+                            if ( result.success )
+                            {
+                                showModal( result.message, 'success' );
+                                leaveForm.reset(); // Clear the form on success
+                                loadLeaveBalance(); // Refresh leave balance
+                                loadLeaveHistory(); // Refresh leave history
+                            } else
+                            {
+                                showModal( result.message, 'error' );
+                            }
+                        } catch ( error )
+                        {
+                            console.error( 'Error applying for leave:', error );
+                            showModal( 'Something went wrong. Please try again.', 'error' );
+                        }
+                    } );
+                }
+            } );
+        </script>
+        <script src="/pwa-size.js"></script>
+        <script src="/ui.js"></script>
+        <script src="/flatpickr.min.js"></script>
+        <script>
+            // Initialize bottom navigation after user data is loaded
+            window.addEventListener( 'load', async () =>
+            {
+                const userRes = await fetch( '/user/me' );
+                const user = await userRes.json();
+                initBottomNav( 'dashboard', user.role );
+            } );
+
+            // Event delegation for selfie thumbnails
+            document.addEventListener( 'click', ( e ) =>
+            {
+                if ( e.target && e.target.classList.contains( 'selfie-thumbnail' ) )
+                {
+                    const src = e.target.getAttribute( 'data-selfie-src' );
+                    const type = e.target.getAttribute( 'data-selfie-type' );
+                    if ( src ) showImageModal( src, type );
+                }
+            } );
+        </script>
+    </body>
+
+</html>

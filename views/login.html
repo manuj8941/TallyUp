@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0ea5a4">
+    <meta name="description" content="Employee attendance tracking system">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <title>Login</title>
+    <link rel="stylesheet" href="/mobile.css">
+    <link rel="stylesheet" href="/flatpickr.min.css">
+    <link rel="stylesheet" href="/airbnb.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Apply branding color immediately to prevent flash -->
+    <script>
+      ( function ()
+      {
+        // Apply cached color instantly (synchronous)
+        const cached = localStorage.getItem( 'brandColor' );
+        if ( cached )
+        {
+          document.documentElement.style.setProperty( '--brand-color', cached );
+          document.documentElement.style.setProperty( '--accent', cached );
+          // Update meta theme-color
+          const metaTheme = document.querySelector( 'meta[name="theme-color"]' );
+          if ( metaTheme ) metaTheme.setAttribute( 'content', cached );
+        }
+
+        // Fetch and update cache (async, non-blocking)
+        fetch( '/branding' ).then( res => res.json() ).then( data =>
+        {
+          if ( data.brandColor )
+          {
+            localStorage.setItem( 'brandColor', data.brandColor );
+            if ( data.brandColor !== cached )
+            {
+              document.documentElement.style.setProperty( '--brand-color', data.brandColor );
+              document.documentElement.style.setProperty( '--accent', data.brandColor );
+              // Update meta theme-color
+              const metaTheme = document.querySelector( 'meta[name="theme-color"]' );
+              if ( metaTheme ) metaTheme.setAttribute( 'content', data.brandColor );
+            }
+          }
+        } ).catch( () => { } );
+      } )();
+    </script>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>Sign in</h1>
+      <div id="login-error" class="notice" style="display:none"></div>
+      <form action="/login" method="post">
+        <label for="name">Your username</label>
+        <input type="text" id="name" name="name" required>
+
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+
+        <button type="submit"><i class="fas fa-sign-in-alt"></i> Let's Go!</button>
+      </form>
+    </div>
+    <script src="/pwa-size.js"></script>
+    <script src="/ui.js"></script>
+    <script>
+      // Fetch any server-side login error (flash) and show it
+      ( async function ()
+      {
+        try
+        {
+          const res = await fetch( '/login/error' );
+          if ( !res.ok ) return;
+          const data = await res.json();
+          if ( data && data.error )
+          {
+            const el = document.getElementById( 'login-error' );
+            el.textContent = data.error;
+            el.style.display = 'block';
+          }
+        } catch ( e )
+        {
+          // ignore
+        }
+      } )();
+
+      // If redirected due to desktop block, show a friendly modal
+      ( function ()
+      {
+        try
+        {
+          const params = new URLSearchParams( window.location.search );
+          if ( params.get( 'desktop_blocked' ) === '1' )
+          {
+            if ( window.showAppModal )
+            {
+              showAppModal( 'Hey there! 👋 For security, please sign in from your mobile device. Contact your admin if you need desktop access.', 'error' );
+            } else
+            {
+              const el = document.getElementById( 'login-error' );
+              el.textContent = 'Hey there! 👋 For security, please sign in from your mobile device. Contact your admin if you need desktop access.';
+              el.style.display = 'block';
+            }
+          }
+        } catch ( e ) { /* ignore */ }
+      } )();
+    </script>
+    <script src="/flatpickr.min.js"></script>
+  </body>
+
+</html>

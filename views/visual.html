@@ -1,0 +1,478 @@
+<!doctype html>
+<html>
+
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <meta name="theme-color" content="#0ea5a4">
+        <meta name="description" content="Employee attendance tracking system">
+        <link rel="manifest" href="/manifest.json">
+        <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+        <link rel="apple-touch-icon" href="/icons/icon-192.png">
+        <title>Visual Calendar</title>
+        <link rel="stylesheet" href="/mobile.css">
+        <link rel="stylesheet" href="/flatpickr.min.css">
+        <link rel="stylesheet" href="/airbnb.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+        <!-- Apply branding color immediately to prevent flash -->
+        <script>
+            ( function ()
+            {
+                // Apply cached color instantly (synchronous)
+                const cached = localStorage.getItem( 'brandColor' );
+                if ( cached )
+                {
+                    document.documentElement.style.setProperty( '--brand-color', cached );
+                    document.documentElement.style.setProperty( '--accent', cached );
+                    // Update meta theme-color
+                    const metaTheme = document.querySelector( 'meta[name="theme-color"]' );
+                    if ( metaTheme ) metaTheme.setAttribute( 'content', cached );
+                }
+
+                // Fetch and update cache (async, non-blocking)
+                fetch( '/branding' ).then( res => res.json() ).then( data =>
+                {
+                    if ( data.brandColor )
+                    {
+                        localStorage.setItem( 'brandColor', data.brandColor );
+                        if ( data.brandColor !== cached )
+                        {
+                            document.documentElement.style.setProperty( '--brand-color', data.brandColor );
+                            document.documentElement.style.setProperty( '--accent', data.brandColor );
+                            // Update meta theme-color
+                            const metaTheme = document.querySelector( 'meta[name="theme-color"]' );
+                            if ( metaTheme ) metaTheme.setAttribute( 'content', data.brandColor );
+                        }
+                    }
+                } ).catch( () => { } );
+            } )();
+        </script>
+    </head>
+
+    <body>
+        <div class="container">
+            <div class="section">
+                <h1 style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                    <i class="fas fa-calendar-alt"></i> <span id="calendar-title">My Attendance Calendar</span>
+                    <img class="nav-avatar" id="header-avatar" src="/default-avatar.svg" alt="Profile"
+                        style="display:none;margin-left:auto">
+                    <span style="font-size:0.9rem;font-weight:normal">
+                        Welcome, <strong id="profile-name"></strong>! (<span id="profile-role"></span>)
+                    </span>
+                </h1>
+
+                <div class="calendar-controls">
+                    <div style="display:flex;gap:4px;align-items:center">
+                        <button id="prev-month" class="nav-btn"><i class="fas fa-chevron-left"></i></button>
+                        <button id="next-month" class="nav-btn"><i class="fas fa-chevron-right"></i></button>
+                        <strong id="month-label" style="margin-left:4px;font-size:1rem"></strong>
+                    </div>
+                    <div>
+                        <button id="today-btn" class="nav-btn"><i class="fas fa-calendar-day"></i> Today</button>
+                    </div>
+                </div>
+
+                <div id="user-select-container" style="margin-bottom:12px;display:none">
+                    <select id="user-select"></select>
+                </div>
+
+                <div class="calendar-header">
+                    <div>Mon</div>
+                    <div>Tue</div>
+                    <div>Wed</div>
+                    <div>Thu</div>
+                    <div>Fri</div>
+                    <div>Sat</div>
+                    <div>Sun</div>
+                </div>
+
+                <div id="calendar" class="calendar-grid"></div>
+                <div id="calendar-loading" style="display:none;text-align:center;padding:20px;color:#666"><i
+                        class="fas fa-spinner fa-spin"></i> Loading your calendar...
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-dot cal-status-present"></div> Present
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot cal-status-absent"></div> Absent
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot cal-status-leave"></div> Leave
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot cal-status-half_day_leave"></div> Half Day Leave
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot cal-status-holiday"></div> Holiday
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot cal-status-weekly"></div> Weekly Off
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-item">
+                            <div class="legend-item">
+                                <div class="legend-dot cal-status-ad_hoc"></div> Ad-hoc
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Month Statistics -->
+                <div class="section" style="margin-top:16px;background:#f9fafb;border:1px solid #e5e7eb;padding:12px">
+                    <h3 style="margin:0 0 12px 0;font-size:1rem;color:#374151"><i class="fas fa-chart-bar"></i> Month
+                        Summary</h3>
+                    <div style="display:grid;gap:8px;font-size:0.875rem">
+                        <div
+                            style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e5e7eb">
+                            <span style="color:#6b7280">Total Days:</span>
+                            <strong id="stat-total-days">-</strong>
+                        </div>
+                        <div
+                            style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e5e7eb">
+                            <span style="color:#6b7280">Working Days:</span>
+                            <strong id="stat-working-days">-</strong>
+                        </div>
+                        <div
+                            style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e5e7eb">
+                            <span style="color:#6b7280">Present:</span>
+                            <strong id="stat-present-days" style="color:#10b981">-</strong>
+                        </div>
+                        <div
+                            style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e5e7eb">
+                            <span style="color:#6b7280">Approved Leaves:</span>
+                            <strong id="stat-leave-days" style="color:#f59e0b">-</strong>
+                        </div>
+                        <div id="stat-absent-row" style="display:none;justify-content:space-between;padding:6px 0">
+                            <span style="color:#6b7280">Absent:</span>
+                            <strong id="stat-absent-days" style="color:#ef4444">-</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Spacer to ensure content clears bottom navbar -->
+            <div class="bottom-spacer"></div>
+
+            <script>
+                let cur = new Date();
+                let selUser = null;
+
+                function pad ( n ) { return n < 10 ? '0' + n : '' + n; }
+
+                // Fetch list of users (only works for admins/managers)
+                async function fetchUsersIfAllowed ()
+                {
+                    try
+                    {
+                        const res = await fetch( '/admin/users' );
+                        if ( !res.ok ) return null;
+                        return await res.json();
+                    } catch ( e ) { return null; }
+                }
+
+                function setMonthLabel ( dt )
+                {
+                    const months = [ 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December' ];
+                    document.getElementById( 'month-label' ).textContent = months[ dt.getMonth() ] + ' ' + dt.getFullYear();
+                }
+
+                // Helper to format nice date for modal title
+                function formatDateFriendly ( iso )
+                {
+                    if ( !iso ) return '';
+                    const d = new Date( iso + 'T00:00:00' );
+                    const months = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' ];
+                    const days = [ 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' ];
+                    const dayName = days[ d.getDay() ];
+                    const day = d.getDate();
+                    const month = months[ d.getMonth() ];
+                    const year = String( d.getFullYear() ).slice( -2 );
+                    return `${ dayName }, ${ day }-${ month }-${ year }`;
+                }
+
+                // Calculate and display month statistics
+                function calculateMonthStats ( days, year, month )
+                {
+                    // 1. Total days in month
+                    const totalDays = new Date( year, month, 0 ).getDate();
+
+                    // 2. Count days by status
+                    let weeklyOffDays = 0;
+                    let adHocOffDays = 0;
+                    let holidayDays = 0;
+                    let approvedLeaveDays = 0; // Can be fractional (0.5 for half-days)
+                    let fullDayLeaveDays = 0; // Only full-day leaves
+                    let presentDays = 0; // Can be fractional (0.5 for half-day leave days)
+                    let halfDayLeaveDays = 0;
+
+                    days.forEach( dayInfo =>
+                    {
+                        switch ( dayInfo.status )
+                        {
+                            case 'weekly':
+                                weeklyOffDays++;
+                                break;
+                            case 'ad_hoc':
+                                adHocOffDays++;
+                                break;
+                            case 'holiday':
+                                holidayDays++;
+                                break;
+                            case 'leave':
+                                approvedLeaveDays++;
+                                fullDayLeaveDays++; // Count for working days calculation
+                                break;
+                            case 'half_day_leave':
+                                approvedLeaveDays += 0.5;
+                                presentDays += 0.5; // Count as 0.5 present (worked half day)
+                                halfDayLeaveDays++;
+                                break;
+                            case 'absent_half_leave':
+                                approvedLeaveDays += 0.5;
+                                // Don't count as present (they didn't show up for their working half)
+                                break;
+                            case 'present':
+                                presentDays++;
+                                break;
+                        }
+                    } );
+
+                    // 3. Calculate working days (can be fractional)
+                    // Working days = Total - weekly offs - ad-hoc offs - holidays - all leave days (including fractional half-day leaves)
+                    const workingDays = totalDays - weeklyOffDays - adHocOffDays - holidayDays - approvedLeaveDays;
+
+                    // 4. Calculate absent days (only for past months) - can be fractional
+                    const today = new Date();
+                    const currentYear = today.getFullYear();
+                    const currentMonth = today.getMonth() + 1;
+                    const isPastMonth = ( year < currentYear ) || ( year === currentYear && month < currentMonth );
+
+                    let absentDays = 0;
+                    if ( isPastMonth )
+                    {
+                        absentDays = workingDays - presentDays;
+                    }
+
+                    // 5. Update DOM elements (format fractional values nicely)
+                    const formatFractional = ( val ) => val % 1 === 0 ? val : val.toFixed( 1 );
+
+                    document.getElementById( 'stat-total-days' ).textContent = totalDays;
+                    document.getElementById( 'stat-working-days' ).textContent = formatFractional( workingDays );
+                    document.getElementById( 'stat-present-days' ).textContent = formatFractional( presentDays );
+                    document.getElementById( 'stat-leave-days' ).textContent = formatFractional( approvedLeaveDays );
+                    document.getElementById( 'stat-absent-days' ).textContent = formatFractional( absentDays );
+
+                    // 6. Show/hide absent row based on whether month is complete
+                    const absentRow = document.getElementById( 'stat-absent-row' );
+                    if ( isPastMonth )
+                    {
+                        absentRow.style.display = 'flex';
+                    } else
+                    {
+                        absentRow.style.display = 'none';
+                    }
+                }
+
+                async function loadCalendar ()
+                {
+                    const year = cur.getFullYear();
+                    const month = cur.getMonth() + 1;
+                    const username = selUser || '';
+
+                    const loadingEl = document.getElementById( 'calendar-loading' );
+                    const container = document.getElementById( 'calendar' );
+
+                    loadingEl.style.display = 'block';
+                    container.style.display = 'none';
+
+                    try
+                    {
+                        const res = await fetch( `/visual/data?username=${ encodeURIComponent( username ) }&year=${ year }&month=${ month }` );
+                        if ( !res.ok ) throw new Error( 'Failed to load' );
+
+                        const payload = await res.json();
+                        renderCalendar( payload.days, payload.year, payload.month );
+                        calculateMonthStats( payload.days, payload.year, payload.month );
+
+                        container.style.display = 'grid';
+                    } catch ( e )
+                    {
+                        console.error( e );
+                        // Use global modal if available, else alert
+                        if ( window.showAppModal ) showAppModal( 'Could not load calendar data.', 'error' );
+                    } finally
+                    {
+                        loadingEl.style.display = 'none';
+                    }
+                }
+
+                function renderCalendar ( days, year, month )
+                {
+                    setMonthLabel( new Date( year, month - 1, 1 ) );
+                    const cal = document.getElementById( 'calendar' );
+                    cal.innerHTML = '';
+
+                    const first = new Date( year, month - 1, 1 );
+                    // Calculate blank days (Monday start: Mon=1...Sun=0 adjustment)
+                    let startDow = first.getDay();
+                    if ( startDow === 0 ) startDow = 7; // Convert Sun(0) to 7
+                    startDow -= 1; // Now Mon=0, Sun=6
+
+                    const daysInMonth = new Date( year, month, 0 ).getDate();
+
+                    // 1. Render blank slots
+                    for ( let i = 0; i < startDow; i++ )
+                    {
+                        const el = document.createElement( 'div' );
+                        el.className = 'cal-day empty';
+                        cal.appendChild( el );
+                    }
+
+                    // 2. Render actual days
+                    for ( let d = 1; d <= daysInMonth; d++ )
+                    {
+                        const dateStr = `${ year }-${ pad( month ) }-${ pad( d ) }`;
+                        // Find status for this day
+                        const info = days.find( x => x.date === dateStr ) || { date: dateStr, status: 'absent' };
+
+                        const el = document.createElement( 'div' );
+                        el.className = `cal-day cal-status-${ info.status }`;
+                        el.textContent = d; // Just the number, clean and simple
+
+                        // Interaction
+                        el.addEventListener( 'click', () =>
+                        {
+                            const title = formatDateFriendly( dateStr );
+                            const body = [];
+
+                            // Build details list
+                            const statusPretty = info.status.charAt( 0 ).toUpperCase() + info.status.slice( 1 ).replace( '_', ' ' );
+                            body.push( `Status: ${ statusPretty }` );
+
+                            if ( info.in_time ) body.push( `In: ${ info.in_time }` );
+                            if ( info.out_time ) body.push( `Out: ${ info.out_time }` );
+                            if ( info.total_time ) body.push( `Total: ${ info.total_time }` );
+
+                            if ( info.leave ) body.push( `Reason: ${ info.leave.reason || 'N/A' }` );
+                            if ( info.holiday_name ) body.push( `${ info.holiday_name }` );
+                            if ( info.adhoc_reason ) body.push( `${ info.adhoc_reason }` );
+
+                            // Use global modal
+                            if ( window.showAppModal )
+                            {
+                                // We can pass HTML to the modal if we join with <br>
+                                // But our basic modal expects text. Let's format it simply for now.
+                                // If you want HTML support, we'd update ui.js, but newline works for basic alerts.
+                                showAppModal( `${ title }\n\n${ body.map( l => l.replace( /<strong>|<\/strong>/g, '' ) ).join( '\n' ) }`, 'info' );
+                            }
+                        } );
+
+                        cal.appendChild( el );
+                    }
+                }
+
+                window.addEventListener( 'load', async () =>
+                {
+                    // Determine current user
+                    const meRes = await fetch( '/user/me' );
+                    if ( meRes.ok )
+                    {
+                        const me = await meRes.json();
+                        selUser = me.name;
+
+                        // Display user info in header
+                        document.getElementById( 'profile-name' ).textContent = me.displayName || me.name;
+                        document.getElementById( 'profile-role' ).textContent = me.role.replace( '_', ' ' );
+
+                        // Update calendar title based on role
+                        const titleElement = document.getElementById( 'calendar-title' );
+                        if ( me.role === 'owner' || me.role === 'manager' )
+                        {
+                            titleElement.textContent = "Team's Calendar";
+                        }
+                        else
+                        {
+                            titleElement.textContent = "My Calendar";
+                        }
+
+                        // Apply branding (logo and avatar)
+                        if ( window.applyBranding ) window.applyBranding();
+                    }
+
+                    // Setup User Selector (Manager/Owner only)
+                    const users = await fetchUsersIfAllowed();
+                    const selContainer = document.getElementById( 'user-select-container' );
+                    const sel = document.getElementById( 'user-select' );
+
+                    if ( users && Array.isArray( users ) && users.length > 0 )
+                    {
+                        const filtered = users.filter( u => u.role !== 'owner' );
+
+                        if ( filtered.length > 0 )
+                        {
+                            selContainer.style.display = 'block';
+                            sel.innerHTML = '';
+                            filtered.forEach( u =>
+                            {
+                                const opt = document.createElement( 'option' );
+                                opt.value = u.name;
+                                opt.textContent = u.name; // Removed role for cleaner mobile view
+                                sel.appendChild( opt );
+                            } );
+
+                            // Set dropdown to current user if possible
+                            if ( sel.querySelector( `option[value="${ selUser }"]` ) )
+                            {
+                                sel.value = selUser;
+                            } else
+                            {
+                                selUser = sel.value; // Default to first available
+                            }
+
+                            sel.addEventListener( 'change', () =>
+                            {
+                                selUser = sel.value;
+                                loadCalendar();
+                            } );
+                        }
+                    }
+
+                    // Event Listeners
+                    document.getElementById( 'prev-month' ).addEventListener( 'click', () =>
+                    {
+                        cur.setMonth( cur.getMonth() - 1 );
+                        loadCalendar();
+                    } );
+                    document.getElementById( 'next-month' ).addEventListener( 'click', () =>
+                    {
+                        cur.setMonth( cur.getMonth() + 1 );
+                        loadCalendar();
+                    } );
+                    document.getElementById( 'today-btn' ).addEventListener( 'click', () =>
+                    {
+                        cur = new Date();
+                        loadCalendar();
+                    } );
+
+                    // Initial Load
+                    loadCalendar();
+                } );
+            </script>
+            <script src="/pwa-size.js"></script>
+            <script src="/ui.js"></script>
+            <script src="/flatpickr.min.js"></script>
+            <script>
+                window.addEventListener( 'load', async () =>
+                {
+                    const userRes = await fetch( '/user/me' );
+                    const user = await userRes.json();
+                    initBottomNav( 'visual', user.role );
+                } );
+            </script>
+    </body>
+
+</html>
