@@ -25,6 +25,12 @@ router.post( '/login', async ( req, res ) =>
 
         if ( user )
         {
+            if ( user.is_active === 0 )
+            {
+                req.session.loginError = 'This account has been deactivated. Please contact your administrator.';
+                return res.redirect( '/?error=deactivated' );
+            }
+
             // If desktop access is disabled, prevent non-owner logins from desktop devices
             getSetting( 'desktop_enabled' ).then( ( value ) =>
             {

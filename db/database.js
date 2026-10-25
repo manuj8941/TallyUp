@@ -35,9 +35,9 @@ async function initializeDatabaseAsync ( app, accrueLeavesCallback )
         const allCoreTablesExist = existingTableNames.length === 5; // All 5 core tables
 
         // Users table
-        await db.run( 'CREATE TABLE IF NOT EXISTS users (name TEXT PRIMARY KEY, password TEXT, role TEXT, leave_balance REAL DEFAULT 0, leave_balance_last_updated TEXT, join_date TEXT DEFAULT \'2025-01-01\', current_session_id TEXT DEFAULT \'\', profile_picture TEXT)' );
+        await db.run( 'CREATE TABLE IF NOT EXISTS users (name TEXT PRIMARY KEY, password TEXT, role TEXT, leave_balance REAL DEFAULT 0, leave_balance_last_updated TEXT, join_date TEXT DEFAULT \'2025-01-01\', current_session_id TEXT DEFAULT \'\', profile_picture TEXT, is_active INTEGER DEFAULT 1)' );
 
-        // Ensure current_session_id and profile_picture columns exist (migration for existing tables)
+        // Ensure current_session_id, profile_picture, and is_active columns exist (migration for existing tables)
         const userColumns = await db.all( "PRAGMA table_info(users)" );
         const userColumnNames = userColumns.map( c => c.name );
         if ( !userColumnNames.includes( 'current_session_id' ) )
@@ -50,6 +50,11 @@ async function initializeDatabaseAsync ( app, accrueLeavesCallback )
             await db.run( "ALTER TABLE users ADD COLUMN profile_picture TEXT" );
             console.log( '✅ Added profile_picture column to users table' );
         }
+        if ( !userColumnNames.includes( 'is_active' ) )
+        {
+            await db.run( "ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1" );
+            console.log( '✅ Added is_active column to users table' );
+        }
 
         // Insert seed users
         for ( const user of users )
@@ -59,14 +64,14 @@ async function initializeDatabaseAsync ( app, accrueLeavesCallback )
                 const pwdHash = bcrypt.hashSync( ( user.password || '' ).toString(), SALT_ROUNDS );
                 const normalized = user.name.toLowerCase().replace( /[.\-_\s]/g, '' );
                 const joinDate = user.join_date || getMoment().format( 'YYYY-MM-DD' );
-                await db.run( 'INSERT OR IGNORE INTO users (name, password, role, join_date) VALUES (?, ?, ?, ?)',
+                await db.run( 'INSERT OR IGNORE INTO users (name, password, role, join_date, is_active) VALUES (?, ?, ?, ?, 1)',
                     [ normalized, pwdHash, user.role, joinDate ] );
             } catch ( e )
             {
                 console.error( 'Error hashing seed password for', user.name, e );
                 const normalized = user.name.toLowerCase().replace( /[.\-_\s]/g, '' );
                 const joinDate = user.join_date || getMoment().format( 'YYYY-MM-DD' );
-                await db.run( 'INSERT OR IGNORE INTO users (name, password, role, join_date) VALUES (?, ?, ?, ?)',
+                await db.run( 'INSERT OR IGNORE INTO users (name, password, role, join_date, is_active) VALUES (?, ?, ?, ?, 1)',
                     [ normalized, user.password, user.role, joinDate ] );
             }
         }
@@ -78,10 +83,24 @@ async function initializeDatabaseAsync ( app, accrueLeavesCallback )
             date TEXT NOT NULL,
             in_time TEXT, in_latitude REAL, in_longitude REAL, in_selfie_path TEXT,
             out_time TEXT, out_latitude REAL, out_longitude REAL, out_selfie_path TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(username, date)
         )` );
         await db.run( "CREATE INDEX IF NOT EXISTS idx_attendance_user_date ON attendance(username, date)" );
         await db.run( "CREATE INDEX IF NOT EXISTS idx_attendance_date ON attendance(date)" );
+
+        // Ensure optional columns exist on attendance table
+        const attColumnInfo = await db.all( "PRAGMA table_info(attendance)" );
+        const existingAttColumns = ( attColumnInfo || [] ).map( c => c.name );
+        if ( !existingAttColumns.includes( 'created_at' ) )
+        {
+            await db.run( "ALTER TABLE attendance ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP" );
+        }
+        if ( !existingAttColumns.includes( 'updated_at' ) )
+        {
+            await db.run( "ALTER TABLE attendance ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP" );
+        }
 
         // Automatic migration from legacy per-user attendance tables
         try
@@ -113,8 +132,12 @@ async function initializeDatabaseAsync ( app, accrueLeavesCallback )
             is_backdated INTEGER DEFAULT 0,
             taken_back INTEGER DEFAULT 0,
             taken_back_at TEXT DEFAULT '',
-            leave_type TEXT DEFAULT 'full'
+            leave_type TEXT DEFAULT 'full',
+            applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )` );
+        await db.run( "CREATE INDEX IF NOT EXISTS idx_leaves_user_status ON leaves(username, status)" );
+        await db.run( "CREATE INDEX IF NOT EXISTS idx_leaves_dates ON leaves(start_date, end_date)" );
+        await db.run( "CREATE INDEX IF NOT EXISTS idx_leaves_status ON leaves(status)" );
 
         // Ensure optional columns exist on leaves table (migrations)
         const leavesColumnInfo = await db.all( "PRAGMA table_info(leaves)" );
@@ -124,7 +147,8 @@ async function initializeDatabaseAsync ( app, accrueLeavesCallback )
             { name: 'is_backdated', def: 'is_backdated INTEGER DEFAULT 0' },
             { name: 'taken_back', def: 'taken_back INTEGER DEFAULT 0' },
             { name: 'taken_back_at', def: 'taken_back_at TEXT DEFAULT \'\'' },
-            { name: 'leave_type', def: 'leave_type TEXT DEFAULT \'full\'' }
+            { name: 'leave_type', def: 'leave_type TEXT DEFAULT \'full\'' },
+            { name: 'applied_at', def: 'applied_at DATETIME DEFAULT CURRENT_TIMESTAMP' }
         ];
 
         for ( const col of leavesColumnsToAdd )
@@ -165,6 +189,8 @@ async function initializeDatabaseAsync ( app, accrueLeavesCallback )
             month_day TEXT,
             date TEXT
         )` );
+        await db.run( "CREATE INDEX IF NOT EXISTS idx_holidays_month_day ON holidays(month_day)" );
+        await db.run( "CREATE INDEX IF NOT EXISTS idx_holidays_date ON holidays(date)" );
 
         if ( allCoreTablesExist )
         {
@@ -226,8 +252,8 @@ function initializeDatabaseSync ( app, accrueLeavesCallback )
 {
     db.serialize( () =>
     {
-        // Users table with roles, leave balance, last update timestamp, and join date
-        db.run( 'CREATE TABLE IF NOT EXISTS users (name TEXT PRIMARY KEY, password TEXT, role TEXT, leave_balance REAL DEFAULT 0, leave_balance_last_updated TEXT, join_date TEXT DEFAULT \'2025-01-01\')', ( err ) =>
+        // Users table with roles, leave balance, last update timestamp, join date, session id, profile picture, and is_active
+        db.run( 'CREATE TABLE IF NOT EXISTS users (name TEXT PRIMARY KEY, password TEXT, role TEXT, leave_balance REAL DEFAULT 0, leave_balance_last_updated TEXT, join_date TEXT DEFAULT \'2025-01-01\', current_session_id TEXT DEFAULT \'\', profile_picture TEXT, is_active INTEGER DEFAULT 1)', ( err ) =>
         {
             if ( err )
             {
@@ -236,7 +262,7 @@ function initializeDatabaseSync ( app, accrueLeavesCallback )
             }
         } );
 
-        const stmtUsers = db.prepare( 'INSERT OR IGNORE INTO users (name, password, role, join_date) VALUES (?, ?, ?, ?)' );
+        const stmtUsers = db.prepare( 'INSERT OR IGNORE INTO users (name, password, role, join_date, is_active) VALUES (?, ?, ?, ?, 1)' );
         users.forEach( user =>
         {
             try
@@ -255,7 +281,7 @@ function initializeDatabaseSync ( app, accrueLeavesCallback )
         } );
         stmtUsers.finalize();
 
-        // Ensure optional columns exist on `users` for single-session mapping and profile pictures
+        // Ensure optional columns exist on `users`
         db.all( "PRAGMA table_info(users)", [], ( prErrU, ucols ) =>
         {
             if ( prErrU ) return;
@@ -264,6 +290,7 @@ function initializeDatabaseSync ( app, accrueLeavesCallback )
                 const namesU = ( ucols || [] ).map( c => c.name );
                 if ( namesU.indexOf( 'current_session_id' ) === -1 ) db.run( "ALTER TABLE users ADD COLUMN current_session_id TEXT DEFAULT ''" );
                 if ( namesU.indexOf( 'profile_picture' ) === -1 ) db.run( "ALTER TABLE users ADD COLUMN profile_picture TEXT" );
+                if ( namesU.indexOf( 'is_active' ) === -1 ) db.run( "ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1" );
             } catch ( e ) { /* ignore migration errors */ }
         } );
 
@@ -274,10 +301,24 @@ function initializeDatabaseSync ( app, accrueLeavesCallback )
             date TEXT NOT NULL,
             in_time TEXT, in_latitude REAL, in_longitude REAL, in_selfie_path TEXT,
             out_time TEXT, out_latitude REAL, out_longitude REAL, out_selfie_path TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(username, date)
         )` );
         db.run( "CREATE INDEX IF NOT EXISTS idx_attendance_user_date ON attendance(username, date)" );
         db.run( "CREATE INDEX IF NOT EXISTS idx_attendance_date ON attendance(date)" );
+
+        // Ensure optional columns exist on attendance table
+        db.all( "PRAGMA table_info(attendance)", [], ( prErrA, acols ) =>
+        {
+            if ( prErrA ) return;
+            try
+            {
+                const namesA = ( acols || [] ).map( c => c.name );
+                if ( namesA.indexOf( 'created_at' ) === -1 ) db.run( "ALTER TABLE attendance ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP" );
+                if ( namesA.indexOf( 'updated_at' ) === -1 ) db.run( "ALTER TABLE attendance ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP" );
+            } catch ( e ) { /* ignore migration errors */ }
+        } );
 
         // Automatic migration from legacy per-user attendance tables
         db.all( "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'attendance_%'", [], ( migErr, legacyTables ) =>
@@ -302,8 +343,16 @@ function initializeDatabaseSync ( app, accrueLeavesCallback )
             end_date TEXT,
             reason TEXT,
             status TEXT DEFAULT 'pending',
-            approved_by TEXT
-        )`);
+            approved_by TEXT,
+            is_backdated INTEGER DEFAULT 0,
+            taken_back INTEGER DEFAULT 0,
+            taken_back_at TEXT DEFAULT '',
+            leave_type TEXT DEFAULT 'full',
+            applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )` );
+        db.run( "CREATE INDEX IF NOT EXISTS idx_leaves_user_status ON leaves(username, status)" );
+        db.run( "CREATE INDEX IF NOT EXISTS idx_leaves_dates ON leaves(start_date, end_date)" );
+        db.run( "CREATE INDEX IF NOT EXISTS idx_leaves_status ON leaves(status)" );
 
         // Ensure optional columns exist on `leaves`
         db.all( "PRAGMA table_info(leaves)", [], ( prErr, cols ) =>
@@ -316,6 +365,7 @@ function initializeDatabaseSync ( app, accrueLeavesCallback )
                 if ( names.indexOf( 'taken_back' ) === -1 ) db.run( "ALTER TABLE leaves ADD COLUMN taken_back INTEGER DEFAULT 0" );
                 if ( names.indexOf( 'taken_back_at' ) === -1 ) db.run( "ALTER TABLE leaves ADD COLUMN taken_back_at TEXT DEFAULT ''" );
                 if ( names.indexOf( 'leave_type' ) === -1 ) db.run( "ALTER TABLE leaves ADD COLUMN leave_type TEXT DEFAULT 'full'" );
+                if ( names.indexOf( 'applied_at' ) === -1 ) db.run( "ALTER TABLE leaves ADD COLUMN applied_at DATETIME DEFAULT CURRENT_TIMESTAMP" );
             } catch ( e ) { /* ignore migration errors */ }
         } );
 
@@ -329,6 +379,10 @@ function initializeDatabaseSync ( app, accrueLeavesCallback )
                 db.run( "INSERT OR IGNORE INTO settings (name, value) VALUES (?, ?)", [ 'desktop_disabled_at', '' ] );
                 db.run( "INSERT OR IGNORE INTO settings (name, value) VALUES (?, ?)", [ 'test_date_override', '' ] );
                 db.run( "INSERT OR IGNORE INTO settings (name, value) VALUES (?, ?)", [ 'timezone', 'Asia/Kolkata' ] );
+                db.run( "INSERT OR IGNORE INTO settings (name, value) VALUES (?, ?)", [ 'weekly_off_mode', '3' ] );
+                db.run( "INSERT OR IGNORE INTO settings (name, value) VALUES (?, ?)", [ 'company_logo', '' ] );
+                db.run( "INSERT OR IGNORE INTO settings (name, value) VALUES (?, ?)", [ 'brand_color', '#0ea5a4' ] );
+                db.run( "INSERT OR IGNORE INTO settings (name, value) VALUES (?, ?)", [ 'company_name', 'Attendance System' ] );
             }
         } );
 
@@ -348,9 +402,8 @@ function initializeDatabaseSync ( app, accrueLeavesCallback )
             month_day TEXT,
             date TEXT
         )` );
-
-        // Weekly off mode (default: mode 3 = All Sundays + 2nd & 4th Saturdays)
-        db.run( "INSERT OR IGNORE INTO settings (name, value) VALUES (?, ?)", [ 'weekly_off_mode', '3' ] );
+        db.run( "CREATE INDEX IF NOT EXISTS idx_holidays_month_day ON holidays(month_day)" );
+        db.run( "CREATE INDEX IF NOT EXISTS idx_holidays_date ON holidays(date)" );
 
         // Branding settings
         db.run( "INSERT OR IGNORE INTO settings (name, value) VALUES (?, ?)", [ 'company_logo', '' ] );

@@ -131,7 +131,7 @@ router.post( '/leaves/apply', requireLogin, async ( req, res ) =>
                 const today = getEffectiveDate( req );
                 const isBackdated = start_date < today ? 1 : 0;
 
-                db.run( 'INSERT INTO leaves (username, start_date, end_date, reason, is_backdated, leave_type) VALUES (?, ?, ?, ?, ?, ?)',
+                db.run( 'INSERT INTO leaves (username, start_date, end_date, reason, is_backdated, leave_type, applied_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
                     [ username, start_date, end_date, storedReason, isBackdated, leaveType ], function ( insErr )
                 {
                     if ( insErr )

@@ -127,7 +127,7 @@ router.post( '/mark-in', requireLogin, async ( req, res ) =>
             // 3. Finalize insertion
             const finalizeInsert = () =>
             {
-                db.run( 'INSERT INTO attendance (username, date, in_time, in_latitude, in_longitude, in_selfie_path) VALUES (?, ?, ?, ?, ?, ?)',
+                db.run( 'INSERT INTO attendance (username, date, in_time, in_latitude, in_longitude, in_selfie_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
                     [ user.name, date, time, latitude, longitude, selfiePath ], function ( err )
                 {
                     if ( err )
@@ -286,7 +286,7 @@ router.post( '/mark-out', requireLogin, async ( req, res ) =>
                 return res.redirect( '/dashboard' );
             }
 
-            db.run( 'UPDATE attendance SET out_time = ?, out_latitude = ?, out_longitude = ?, out_selfie_path = ? WHERE username = ? AND date = ?',
+            db.run( 'UPDATE attendance SET out_time = ?, out_latitude = ?, out_longitude = ?, out_selfie_path = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ? AND date = ?',
                 [ time, latitude, longitude, selfiePath, user.name, date ], function ( err )
             {
                 if ( err )

@@ -149,6 +149,7 @@
                     <input type="password" id="reset-password" name="password" placeholder="111">
                     <br>
                     <button type="submit"><i class="fas fa-key"></i> Reset Password</button>
+                    <button type="button" id="toggle-status-btn" style="background:#64748b;margin-left:8px;"><i class="fas fa-user-lock"></i> Toggle Active / Inactive</button>
                 </form>
                 <hr>
                 <h2><i class="fas fa-eye"></i> Team Check-In Records</h2>
@@ -365,6 +366,49 @@
                     }
                 } );
 
+                const toggleStatusBtn = document.getElementById( 'toggle-status-btn' );
+                if ( toggleStatusBtn )
+                {
+                    toggleStatusBtn.addEventListener( 'click', async () =>
+                    {
+                        const target = document.getElementById( 'reset-target' ).value;
+                        if ( !target )
+                        {
+                            showAppModal( 'Please choose a team member first.', 'error' );
+                            return;
+                        }
+
+                        const select = document.getElementById( 'reset-target' );
+                        const selectedOpt = select.options[ select.selectedIndex ];
+                        const isCurrentlyActive = !selectedOpt.text.includes( 'INACTIVE' );
+                        const newStatus = isCurrentlyActive ? 0 : 1;
+                        const actionName = isCurrentlyActive ? 'deactivate' : 'activate';
+
+                        try
+                        {
+                            const res = await fetch( '/admin/users/toggle-status', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify( { username: target, is_active: newStatus } )
+                            } );
+                            const result = await res.json();
+                            if ( res.ok && result.success )
+                            {
+                                showAppModal( result.message, 'success' );
+                                await populateUserDropdown();
+                            } else
+                            {
+                                showAppModal( result.message || `Failed to ${ actionName } user.`, 'error' );
+                            }
+                        }
+                        catch ( err )
+                        {
+                            console.error( err );
+                            showAppModal( 'Error changing user status.', 'error' );
+                        }
+                    } );
+                }
+
 
             }
 
@@ -543,19 +587,21 @@
                     { // Owner attendance is not tracked
                         const option = document.createElement( 'option' );
                         option.value = user.name;
-                        option.textContent = `${ user.name } (${ user.role.replace( '_', ' ' ) })`;
+                        const statusBadge = user.is_active === 0 ? ' [INACTIVE]' : '';
+                        option.textContent = `${ user.name } (${ user.role.replace( '_', ' ' ) })${ statusBadge }`;
                         select.appendChild( option );
                     }
 
                     // Add to reset-target select for specific user reset
                     if ( resetSelect )
                     {
+                        const statusBadge = user.is_active === 0 ? ' [INACTIVE]' : '';
                         // owner_admin sees all users; employee_admin sees employee_admin and employee; never include other users beyond those
                         if ( currentUser && currentUser.role === 'owner' )
                         {
                             const rOpt = document.createElement( 'option' );
                             rOpt.value = user.name;
-                            rOpt.textContent = `${ user.name } (${ user.role.replace( '_', ' ' ) })`;
+                            rOpt.textContent = `${ user.name } (${ user.role.replace( '_', ' ' ) })${ statusBadge }`;
                             resetSelect.appendChild( rOpt );
                         } else if ( currentUser && currentUser.role === 'manager' )
                         {
@@ -564,7 +610,7 @@
                             {
                                 const rOpt = document.createElement( 'option' );
                                 rOpt.value = user.name;
-                                rOpt.textContent = `${ user.name } (${ user.role.replace( '_', ' ' ) })`;
+                                rOpt.textContent = `${ user.name } (${ user.role.replace( '_', ' ' ) })${ statusBadge }`;
                                 resetSelect.appendChild( rOpt );
                             }
                         }

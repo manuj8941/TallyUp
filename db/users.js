@@ -93,9 +93,10 @@ function getCurrentSessionId ( username )
     const normalized = normalizeUsername( username );
     return new Promise( ( resolve, reject ) =>
     {
-        db.get( 'SELECT current_session_id FROM users WHERE name = ?', [ normalized ], ( err, row ) =>
+        db.get( 'SELECT current_session_id, is_active FROM users WHERE name = ?', [ normalized ], ( err, row ) =>
         {
             if ( err ) return reject( err );
+            if ( row && row.is_active === 0 ) return resolve( '__DEACTIVATED__' );
             resolve( row && row.current_session_id ? row.current_session_id : '' );
         } );
     } );
@@ -121,14 +122,14 @@ function updateSessionId ( username, sessionId )
 }
 
 /**
- * Get all users (name and role)
- * @returns {Promise<Array>} Array of user objects with name and role
+ * Get all users (name, role, and is_active)
+ * @returns {Promise<Array>} Array of user objects with name, role, and is_active
  */
 function getAllUsers ()
 {
     return new Promise( ( resolve, reject ) =>
     {
-        db.all( 'SELECT name, role FROM users', [], ( err, rows ) =>
+        db.all( 'SELECT name, role, is_active FROM users', [], ( err, rows ) =>
         {
             if ( err ) return reject( err );
             resolve( rows || [] );
@@ -149,13 +150,33 @@ function createUser ( username, password, role, joinDate )
     return new Promise( ( resolve, reject ) =>
     {
         const pwdHash = hashPassword( password );
-        db.run( 'INSERT INTO users (name, password, role, join_date) VALUES (?, ?, ?, ?)',
+        db.run( 'INSERT INTO users (name, password, role, join_date, is_active) VALUES (?, ?, ?, ?, 1)',
             [ username, pwdHash, role, joinDate ],
             function ( err )
             {
                 if ( err ) return reject( err );
                 resolve();
             } );
+    } );
+}
+
+/**
+ * Set user active / inactive status (soft delete)
+ * @param {string} username - Username (will be normalized)
+ * @param {number|boolean} isActive - 1 (active) or 0 (inactive)
+ * @returns {Promise<void>}
+ */
+function setUserActiveStatus ( username, isActive )
+{
+    const normalized = normalizeUsername( username );
+    const val = isActive ? 1 : 0;
+    return new Promise( ( resolve, reject ) =>
+    {
+        db.run( 'UPDATE users SET is_active = ? WHERE name = ?', [ val, normalized ], function ( err )
+        {
+            if ( err ) return reject( err );
+            resolve();
+        } );
     } );
 }
 
@@ -241,4 +262,20 @@ function deductLeaveBalance ( username, amount )
     } );
 }
 
-module.exports = {     normalizeUsername,    capitalizeUsername,    getUserByName,    getUserRole,    verifyPassword,    hashPassword,    getCurrentSessionId,    updateSessionId,    getAllUsers,    createUser,    updatePassword,    getLeaveBalance,    updateLeaveBalance,    deductLeaveBalance};
+module.exports = {
+    normalizeUsername,
+    capitalizeUsername,
+    getUserByName,
+    getUserRole,
+    verifyPassword,
+    hashPassword,
+    getCurrentSessionId,
+    updateSessionId,
+    getAllUsers,
+    createUser,
+    setUserActiveStatus,
+    updatePassword,
+    getLeaveBalance,
+    updateLeaveBalance,
+    deductLeaveBalance
+};

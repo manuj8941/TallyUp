@@ -15,6 +15,8 @@ const {
     normalizeUsername,
     capitalizeUsername,
     createUser,
+    setUserActiveStatus,
+    updateSessionId,
     getUserRole,
     updatePassword,
     deductLeaveBalance
@@ -125,6 +127,52 @@ router.post( '/admin/users/reset-password', requireAdmin, async ( req, res ) =>
     catch ( e )
     {
         return res.status( 500 ).json( { success: false, message: e.message || 'Error resetting password.' } );
+    }
+} );
+
+// Toggle user active status (soft delete / reactivate)
+router.post( '/admin/users/toggle-status', requireAdmin, async ( req, res ) =>
+{
+    const { username, is_active } = req.body;
+    const requester = req.session.user;
+
+    if ( !username || !username.trim() )
+    {
+        return res.status( 400 ).json( { success: false, message: 'Please select a team member.' } );
+    }
+
+    try
+    {
+        const target = await getUserByName( username );
+        if ( !target )
+        {
+            return res.status( 404 ).json( { success: false, message: 'Team member not found.' } );
+        }
+
+        if ( target.role === 'owner' )
+        {
+            return res.status( 403 ).json( { success: false, message: 'Owner accounts cannot be deactivated.' } );
+        }
+
+        if ( requester.role === 'manager' && ( target.role === 'manager' || target.role === 'owner' ) )
+        {
+            return res.status( 403 ).json( { success: false, message: 'Managers can only change status for employees.' } );
+        }
+
+        const activeVal = ( is_active === 1 || is_active === true || is_active === '1' ) ? 1 : 0;
+        await setUserActiveStatus( username, activeVal );
+        if ( activeVal === 0 )
+        {
+            // Invalidate any active session immediately
+            await updateSessionId( username, '' );
+        }
+
+        console.log( `Admin ${ requester.name } set active status of ${ username } to ${ activeVal }` );
+        res.json( { success: true, message: `Account ${ activeVal ? 'activated' : 'deactivated' } successfully.` } );
+    }
+    catch ( err )
+    {
+        return res.status( 500 ).json( { success: false, message: err.message || 'Error updating user status.' } );
     }
 } );
 
