@@ -3,7 +3,7 @@
 
     <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
         <meta name="theme-color" content="#0ea5a4">
         <meta name="description" content="Employee attendance tracking system">
         <link rel="manifest" href="/manifest.json">
@@ -83,10 +83,22 @@
                 </div>
                 <div id="day-complete-message" style="display: none;">
                     <p id="attendance-notice" aria-live="polite"
-                        style="margin:0;padding:0;font-weight:normal;color:#333;"></p>
+                        style="margin:0;padding:0;font-weight:normal;color:var(--text);"></p>
                 </div>
-                <video id="video" width="400" height="300" autoplay playsinline muted style="display: none;"></video>
-                <canvas id="canvas" width="400" height="300" style="display: none;"></canvas>
+                <div class="camera-viewfinder-container" id="camera-viewfinder-wrap" style="display: none;">
+                    <div class="camera-viewfinder">
+                        <video id="video" width="400" height="300" autoplay playsinline muted></video>
+                        <canvas id="canvas" width="400" height="300" style="display: none;"></canvas>
+                        <div class="faceid-reticle" id="faceid-reticle">
+                            <div class="reticle-corner corner-tl"></div>
+                            <div class="reticle-corner corner-tr"></div>
+                            <div class="reticle-corner corner-bl"></div>
+                            <div class="reticle-corner corner-br"></div>
+                            <div class="faceid-scanner-beam"></div>
+                        </div>
+                        <div class="camera-shutter-flash" id="camera-flash"></div>
+                    </div>
+                </div>
                 <form id="attendance-form" method="post" style="display: none;">
                     <input type="hidden" id="latitude" name="latitude">
                     <input type="hidden" id="longitude" name="longitude">
@@ -318,7 +330,10 @@
                         actionButton.disabled = true;
                         actionButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Opening camera...';
 
+                        const wrap = document.getElementById( 'camera-viewfinder-wrap' );
+                        if ( wrap ) wrap.style.display = 'block';
                         video.style.display = 'block';
+                        if ( window.triggerHaptic ) triggerHaptic( 'medium' );
                         const s = await navigator.mediaDevices.getUserMedia( {
                             video: {
                                 facingMode: 'user',
@@ -376,6 +391,8 @@
                         }
                         video.srcObject = null;
                         video.style.display = 'none';
+                        const wrap = document.getElementById( 'camera-viewfinder-wrap' );
+                        if ( wrap ) wrap.style.display = 'none';
                         // Reset action button caption to the 'open camera' instruction for the pending action
                         if ( pendingAction === '/mark-in' ) actionButton.innerHTML = '<i class="fas fa-camera"></i> Ready to Check In?';
                         else if ( pendingAction === '/mark-out' ) actionButton.innerHTML = '<i class="fas fa-camera"></i> Time to Check Out?';
@@ -385,6 +402,14 @@
                 // Capture image from video to dataURL
                 function captureFromVideo ()
                 {
+                    const flash = document.getElementById( 'camera-flash' );
+                    if ( flash )
+                    {
+                        flash.classList.add( 'flashing' );
+                        setTimeout( () => flash.classList.remove( 'flashing' ), 180 );
+                    }
+                    if ( window.triggerHaptic ) triggerHaptic( 'success' );
+
                     const ctx = canvas.getContext( '2d' );
                     // Use natural video size if available else fallback
                     const w = video.videoWidth || 400;

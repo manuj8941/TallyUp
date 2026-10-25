@@ -3,14 +3,14 @@
 
   <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0ea5a4">
     <meta name="description" content="Employee attendance tracking system">
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
-    <title>Login</title>
+    <title>Login — TallyUp</title>
     <link rel="stylesheet" href="/mobile.css">
     <link rel="stylesheet" href="/flatpickr.min.css">
     <link rel="stylesheet" href="/airbnb.css">
@@ -20,18 +20,15 @@
     <script>
       ( function ()
       {
-        // Apply cached color instantly (synchronous)
         const cached = localStorage.getItem( 'brandColor' );
         if ( cached )
         {
           document.documentElement.style.setProperty( '--brand-color', cached );
           document.documentElement.style.setProperty( '--accent', cached );
-          // Update meta theme-color
           const metaTheme = document.querySelector( 'meta[name="theme-color"]' );
           if ( metaTheme ) metaTheme.setAttribute( 'content', cached );
         }
 
-        // Fetch and update cache (async, non-blocking)
         fetch( '/branding' ).then( res => res.json() ).then( data =>
         {
           if ( data.brandColor )
@@ -41,7 +38,6 @@
             {
               document.documentElement.style.setProperty( '--brand-color', data.brandColor );
               document.documentElement.style.setProperty( '--accent', data.brandColor );
-              // Update meta theme-color
               const metaTheme = document.querySelector( 'meta[name="theme-color"]' );
               if ( metaTheme ) metaTheme.setAttribute( 'content', data.brandColor );
             }
@@ -52,23 +48,47 @@
   </head>
 
   <body>
-    <div class="container">
-      <h1>Sign in</h1>
-      <div id="login-error" class="notice" style="display:none"></div>
-      <form action="/login" method="post">
-        <label for="name">Your username</label>
-        <input type="text" id="name" name="name" required>
+    <div class="container" style="justify-content: center; min-height: calc(100vh - 40px);">
+      
+      <!-- Apple Inset Login Squircle -->
+      <div class="card" style="padding: 28px 24px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <div style="width: 56px; height: 56px; border-radius: 18px; background: linear-gradient(135deg, var(--accent) 0%, #0d9488 100%); color: white; display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; box-shadow: 0 10px 25px -4px rgba(var(--accent-rgb), 0.4); margin-bottom: 12px;">
+            <i class="fas fa-fingerprint"></i>
+          </div>
+          <h1 style="font-size: 1.65rem; margin-bottom: 4px;">Sign In</h1>
+          <p class="muted" style="font-size: 0.88rem;">TallyUp Mobile Attendance Portal</p>
+        </div>
 
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required>
+        <div id="login-error" class="status-rejected" style="display:none; padding: 12px 14px; border-radius: 12px; font-size: 0.88rem; margin-bottom: 16px; text-align: center; font-weight: 600;"></div>
+        
+        <form action="/login" method="post" style="display: flex; flex-direction: column; gap: 14px;">
+          <div>
+            <label for="name">Username</label>
+            <input type="text" id="name" name="name" placeholder="e.g. atul, smita, manuj" required autocomplete="username" autocapitalize="none">
+          </div>
 
-        <button type="submit"><i class="fas fa-sign-in-alt"></i> Let's Go!</button>
-      </form>
+          <div>
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+          </div>
+
+          <div style="margin-top: 8px;">
+            <button type="submit" id="login-submit-btn">
+              <i class="fas fa-arrow-right"></i> Sign In to Account
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div style="text-align: center; font-size: 0.8rem; color: var(--muted); margin-top: 8px;">
+        Protected by Apple Face ID & Biometrics
+      </div>
     </div>
+
     <script src="/pwa-size.js"></script>
     <script src="/ui.js"></script>
     <script>
-      // Fetch any server-side login error (flash) and show it
       ( async function ()
       {
         try
@@ -81,14 +101,11 @@
             const el = document.getElementById( 'login-error' );
             el.textContent = data.error;
             el.style.display = 'block';
+            if (window.triggerHaptic) triggerHaptic('error');
           }
-        } catch ( e )
-        {
-          // ignore
-        }
+        } catch ( e ) {}
       } )();
 
-      // If redirected due to desktop block, show a friendly modal
       ( function ()
       {
         try
@@ -106,7 +123,7 @@
               el.style.display = 'block';
             }
           }
-        } catch ( e ) { /* ignore */ }
+        } catch ( e ) { }
       } )();
     </script>
     <script src="/flatpickr.min.js"></script>

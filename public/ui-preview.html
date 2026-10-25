@@ -1,0 +1,2077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>TallyUp — Apple iOS Experience Showcase</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/sf-pro-display">
+    <style>
+        :root {
+            --accent: #0ea5a4;
+            --accent-rgb: 14, 165, 164;
+            --ios-gray: #F2F2F7;
+            --ios-card-light: #FFFFFF;
+            --ios-text-light: #000000;
+            --ios-subtext-light: #8E8E93;
+            --ios-border-light: rgba(60, 60, 67, 0.12);
+            --ios-green: #34C759;
+            --ios-orange: #FF9500;
+            --ios-red: #FF3B30;
+            --ios-blue: #007AFF;
+            --ios-purple: #AF52DE;
+
+            /* Default Light Mode Tokens */
+            --theme-bg: #F2F2F7;
+            --theme-card: #FFFFFF;
+            --theme-card-secondary: rgba(142, 142, 147, 0.08);
+            --theme-text: #000000;
+            --theme-subtext: #8E8E93;
+            --theme-border: rgba(60, 60, 67, 0.12);
+            --theme-tab-bg: rgba(255, 255, 255, 0.84);
+            --theme-tab-border: rgba(255, 255, 255, 0.6);
+            --theme-sheet-bg: #FFFFFF;
+            --theme-header-btn-bg: rgba(142, 142, 147, 0.16);
+            --theme-toggle-bg: #e2e8f0;
+            --theme-shimmer-base: rgba(200, 200, 208, 0.35);
+            --theme-shimmer-highlight: rgba(255, 255, 255, 0.75);
+            --theme-shadow: 0 6px 24px -4px rgba(0, 0, 0, 0.05);
+            --theme-stage-bg: #090d16;
+            --theme-device-shell: #000000;
+        }
+
+        /* 1. NATIVE SYSTEM DARK MODE (Automatically active when device is in Dark Mode) */
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --theme-bg: #000000;
+                --theme-card: #1C1C1E;
+                --theme-card-secondary: rgba(255, 255, 255, 0.08);
+                --theme-text: #FFFFFF;
+                --theme-subtext: #98989D;
+                --theme-border: rgba(255, 255, 255, 0.12);
+                --theme-tab-bg: rgba(28, 28, 30, 0.88);
+                --theme-tab-border: rgba(255, 255, 255, 0.14);
+                --theme-sheet-bg: #1C1C1E;
+                --theme-header-btn-bg: rgba(255, 255, 255, 0.14);
+                --theme-toggle-bg: #39393d;
+                --theme-shimmer-base: rgba(44, 44, 46, 0.65);
+                --theme-shimmer-highlight: rgba(72, 72, 74, 0.88);
+                --theme-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+                --theme-stage-bg: #000000;
+                --theme-device-shell: #121214;
+            }
+
+            :root:not([data-theme="light"]) .cal-day-cell.present {
+                color: #34C759;
+                background: rgba(52, 199, 89, 0.22);
+            }
+            :root:not([data-theme="light"]) .status-pill.on-duty {
+                color: #34C759;
+                background: rgba(52, 199, 89, 0.22);
+            }
+            :root:not([data-theme="light"]) .badge-green {
+                color: #34C759;
+                background: rgba(52, 199, 89, 0.22);
+            }
+            :root:not([data-theme="light"]) .badge-orange {
+                color: #ff9f0a;
+                background: rgba(255, 159, 10, 0.22);
+            }
+        }
+
+        /* 2. MANUAL OVERRIDE: FORCE DARK MODE */
+        [data-theme="dark"] {
+            --theme-bg: #000000 !important;
+            --theme-card: #1C1C1E !important;
+            --theme-card-secondary: rgba(255, 255, 255, 0.08) !important;
+            --theme-text: #FFFFFF !important;
+            --theme-subtext: #98989D !important;
+            --theme-border: rgba(255, 255, 255, 0.12) !important;
+            --theme-tab-bg: rgba(28, 28, 30, 0.88) !important;
+            --theme-tab-border: rgba(255, 255, 255, 0.14) !important;
+            --theme-sheet-bg: #1C1C1E !important;
+            --theme-header-btn-bg: rgba(255, 255, 255, 0.14) !important;
+            --theme-toggle-bg: #39393d !important;
+            --theme-shimmer-base: rgba(44, 44, 46, 0.65) !important;
+            --theme-shimmer-highlight: rgba(72, 72, 74, 0.88) !important;
+            --theme-shadow: 0 8px 30px rgba(0, 0, 0, 0.6) !important;
+            --theme-stage-bg: #000000 !important;
+            --theme-device-shell: #121214 !important;
+        }
+
+        [data-theme="dark"] .cal-day-cell.present {
+            color: #34C759 !important;
+            background: rgba(52, 199, 89, 0.22) !important;
+        }
+        [data-theme="dark"] .status-pill.on-duty {
+            color: #34C759 !important;
+            background: rgba(52, 199, 89, 0.22) !important;
+        }
+        [data-theme="dark"] .badge-green {
+            color: #34C759 !important;
+            background: rgba(52, 199, 89, 0.22) !important;
+        }
+        [data-theme="dark"] .badge-orange {
+            color: #ff9f0a !important;
+            background: rgba(255, 159, 10, 0.22) !important;
+        }
+
+        /* 3. MANUAL OVERRIDE: FORCE LIGHT MODE */
+        [data-theme="light"] {
+            --theme-bg: #F2F2F7 !important;
+            --theme-card: #FFFFFF !important;
+            --theme-card-secondary: rgba(142, 142, 147, 0.08) !important;
+            --theme-text: #000000 !important;
+            --theme-subtext: #8E8E93 !important;
+            --theme-border: rgba(60, 60, 67, 0.12) !important;
+            --theme-tab-bg: rgba(255, 255, 255, 0.84) !important;
+            --theme-tab-border: rgba(255, 255, 255, 0.6) !important;
+            --theme-sheet-bg: #FFFFFF !important;
+            --theme-header-btn-bg: rgba(142, 142, 147, 0.16) !important;
+            --theme-toggle-bg: #e2e8f0 !important;
+            --theme-shimmer-base: rgba(200, 200, 208, 0.35) !important;
+            --theme-shimmer-highlight: rgba(255, 255, 255, 0.75) !important;
+            --theme-shadow: 0 6px 24px -4px rgba(0, 0, 0, 0.05) !important;
+            --theme-stage-bg: #090d16 !important;
+            --theme-device-shell: #000000 !important;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+            /* Native iOS App Behavior: Text cannot be dragged or accidentally selected */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            /* Disable long-press context bubble (Copy/Share/Look Up) on iOS & Android */
+            -webkit-touch-callout: none;
+        }
+
+        /* Strict No-Zoom Policy Across Mobile & Laptop Displays */
+        html, body {
+            touch-action: pan-x pan-y;
+            -ms-touch-action: pan-x pan-y;
+            overscroll-behavior: none;
+            -webkit-text-size-adjust: 100%;
+            -moz-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+
+        /* Prevent double-tap zoom delay or zoom triggers on all interactive elements */
+        button, a, input, select, textarea, .ios-card, .tab-btn, .metric-tile, .cal-day-cell, .top-action-pill {
+            touch-action: manipulation;
+        }
+
+        /* Allow text selection only where explicitly necessary (inputs, textareas, .selectable) */
+        input, textarea, [contenteditable="true"], .selectable {
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
+            user-select: text !important;
+            -webkit-touch-callout: default !important;
+        }
+
+        /* 1-Tap Copyable Element Badge */
+        .copy-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--accent);
+            background: rgba(14, 165, 164, 0.12);
+            padding: 2px 7px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+            border: 1px solid rgba(14, 165, 164, 0.25);
+        }
+        .copy-badge:active {
+            transform: scale(0.93);
+            background: rgba(14, 165, 164, 0.25);
+        }
+
+        body, button, input, select, textarea {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+        }
+
+        body {
+            background: #090d16;
+            color: #f1f5f9;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px 8px 40px;
+        }
+
+        /* Top Bar Controls */
+        .preview-controls {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .controls-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(14, 165, 164, 0.15);
+            color: #2dd4bf;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 5px 14px;
+            border-radius: 9999px;
+            border: 1px solid rgba(45, 212, 191, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .preview-controls h1 {
+            font-size: 1.7rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+        }
+
+        .action-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            max-width: 520px;
+        }
+
+        .top-action-pill {
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid #334155;
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .top-action-pill:active { transform: scale(0.96); }
+        .top-action-pill.highlight {
+            background: rgba(14, 165, 164, 0.2);
+            color: #2dd4bf;
+            border-color: rgba(45, 212, 191, 0.4);
+        }
+
+        /* Device Shell / Stage */
+        .device-stage {
+            width: 100%;
+            max-width: 412px;
+            position: relative;
+        }
+
+        @media (min-width: 600px) {
+            .device-stage {
+                height: 844px;
+                background: var(--theme-device-shell);
+                border-radius: 54px;
+                padding: 12px;
+                box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.9), 0 0 0 4px #334155, 0 0 0 8px #1e293b;
+            }
+        }
+
+        @media (max-width: 599px) {
+            body {
+                padding: 0;
+                background: var(--theme-bg);
+            }
+            .preview-controls {
+                padding: 14px 12px 6px;
+                margin-bottom: 0;
+            }
+            .preview-controls h1, .controls-pill { display: none; }
+            .device-stage {
+                max-width: 100%;
+                height: calc(100vh - 58px);
+                border-radius: 0;
+                padding: 0;
+                box-shadow: none;
+            }
+        }
+
+        .app-viewport {
+            width: 100%;
+            height: 100%;
+            border-radius: 44px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            background: var(--theme-bg);
+            color: var(--theme-text);
+            --card-bg: var(--theme-card);
+            --text-color: var(--theme-text);
+            --subtext-color: var(--theme-subtext);
+            --border-color: var(--theme-border);
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        @media (max-width: 599px) {
+            .app-viewport { border-radius: 0; }
+        }
+
+        /* Dynamic Island */
+        .ios-notch-island {
+            width: 116px;
+            height: 30px;
+            background: #000000;
+            border-radius: 20px;
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            transition: width 0.3s ease;
+        }
+
+        @media (max-width: 599px) {
+            .ios-notch-island { display: none; }
+        }
+
+        .island-dot {
+            width: 10px;
+            height: 10px;
+            background: #111827;
+            border-radius: 50%;
+            border: 1px solid #1f2937;
+        }
+
+        .ios-status-bar {
+            height: 48px;
+            padding: 12px 24px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.88rem;
+            font-weight: 700;
+            z-index: 90;
+            flex-shrink: 0;
+        }
+
+        /* Screen Area With Scroll */
+        .app-screens-wrapper {
+            flex: 1;
+            position: relative;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: none;
+            padding-bottom: 96px;
+        }
+        .app-screens-wrapper::-webkit-scrollbar { display: none; }
+
+        .app-screen {
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+            padding: 10px 16px 20px;
+            animation: iosFadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .app-screen.active { display: flex; }
+
+        @keyframes iosFadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .ios-screen-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0 2px;
+        }
+
+        .user-greeting {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar-pill {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent) 0%, #14b8a6 100%);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            font-weight: 800;
+            box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.35);
+            overflow: hidden;
+        }
+
+        .user-avatar-pill img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .header-action-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: rgba(142, 142, 147, 0.16);
+            border: none;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.14s ease;
+        }
+        .header-action-btn:active { transform: scale(0.92); }
+
+        .badge-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--ios-red);
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            border: 2px solid var(--card-bg);
+        }
+
+        .ios-card {
+            background: var(--card-bg);
+            border-radius: 22px;
+            padding: 18px;
+            box-shadow: 0 6px 24px -4px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .section-headline {
+            font-size: 0.76rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--subtext-color);
+            margin: 4px 0 6px 12px;
+        }
+
+        /* Hero Punch In Card */
+        .hero-punch-container {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            padding: 24px 18px 20px;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 9999px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .status-pill.on-duty {
+            background: rgba(52, 199, 89, 0.15);
+            color: #248A3D;
+        }
+        .status-pill.off-duty {
+            background: rgba(14, 165, 164, 0.15);
+            color: var(--accent);
+        }
+
+        .digital-clock {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            font-variant-numeric: tabular-nums;
+            color: var(--text-color);
+            line-height: 1;
+        }
+
+        .digital-date {
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: var(--subtext-color);
+        }
+
+        /* Primary Action Capsule Button */
+        .ios-primary-btn {
+            width: 100%;
+            padding: 16px 20px;
+            border-radius: 18px;
+            border: none;
+            background: linear-gradient(135deg, var(--accent) 0%, #0d9488 100%);
+            color: #ffffff;
+            font-size: 1.08rem;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 10px 25px -4px rgba(var(--accent-rgb), 0.45);
+            transition: transform 0.14s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.14s ease;
+        }
+
+        .ios-primary-btn:active {
+            transform: scale(0.96);
+            box-shadow: 0 4px 10px rgba(var(--accent-rgb), 0.3);
+        }
+
+        .ios-primary-btn.checkout-mode {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            box-shadow: 0 10px 25px -4px rgba(245, 158, 11, 0.45);
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+            margin-top: 6px;
+        }
+
+        .metric-tile {
+            background: rgba(142, 142, 147, 0.08);
+            border-radius: 16px;
+            padding: 12px 14px;
+            text-align: left;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: transform 0.14s ease;
+        }
+        .metric-tile:active { transform: scale(0.96); }
+
+        .metric-tile span {
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: var(--subtext-color);
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .metric-tile strong {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-color);
+        }
+
+        /* Inset Group Table Rows (Apple Settings Style) */
+        .ios-inset-group {
+            background: var(--card-bg);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 18px -4px rgba(0, 0, 0, 0.04);
+        }
+
+        .ios-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 13px 16px;
+            border-bottom: 0.5px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.15s ease, transform 0.14s ease;
+        }
+
+        .ios-row:last-child { border-bottom: none; }
+        .ios-row:active {
+            background: rgba(142, 142, 147, 0.1);
+            transform: scale(0.99);
+        }
+
+        .ios-row-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .ios-icon-box {
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            color: #ffffff;
+        }
+
+        .row-title {
+            font-size: 0.94rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .row-subtitle {
+            font-size: 0.78rem;
+            color: var(--subtext-color);
+        }
+
+        .badge {
+            font-size: 0.76rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 9999px;
+        }
+
+        .badge-green { background: rgba(52, 199, 89, 0.16); color: #248A3D; }
+        .badge-orange { background: rgba(255, 149, 0, 0.16); color: #C97200; }
+        .badge-red { background: rgba(255, 59, 48, 0.16); color: #D70015; }
+
+        /* Authentic iOS Sliding Toggle Switch */
+        .ios-toggle {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 30px;
+        }
+
+        .ios-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--theme-toggle-bg);
+            transition: .24s cubic-bezier(0.16, 1, 0.3, 1);
+            border-radius: 30px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .24s cubic-bezier(0.16, 1, 0.3, 1);
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        input:checked + .toggle-slider {
+            background-color: var(--ios-green);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Calendar Grid */
+        .mini-calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            text-align: center;
+        }
+
+        .cal-header-day {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: var(--subtext-color);
+            padding-bottom: 4px;
+        }
+
+        .cal-day-cell {
+            aspect-ratio: 1;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+
+        .cal-day-cell.present {
+            background: rgba(52, 199, 89, 0.16);
+            color: #248A3D;
+            font-weight: 800;
+        }
+        .cal-day-cell.selected {
+            background: var(--accent) !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 10px rgba(var(--accent-rgb), 0.4);
+        }
+
+        .cal-day-cell:active { transform: scale(0.9); }
+
+        /* Floating Translucent Glass Bottom Tab Bar */
+        .ios-tab-bar {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 28px);
+            background: var(--theme-tab-bg);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-radius: 30px;
+            height: 60px;
+            border: 1px solid var(--theme-tab-border);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 8px;
+            z-index: 80;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            color: var(--subtext-color);
+            font-size: 1.15rem;
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .tab-btn span {
+            font-size: 0.65rem;
+            font-weight: 700;
+        }
+
+        .tab-btn.active {
+            color: var(--accent);
+            background: rgba(var(--accent-rgb), 0.12);
+        }
+
+        /* =========================================================================
+           ENHANCEMENT 1: SHIMMER SKELETON LOADER
+           ========================================================================= */
+        @keyframes iosShimmerAnimation {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .shimmer-placeholder {
+            display: none;
+            background: linear-gradient(90deg, var(--theme-shimmer-base) 25%, var(--theme-shimmer-highlight) 50%, var(--theme-shimmer-base) 75%);
+            background-size: 200% 100%;
+            animation: iosShimmerAnimation 1.5s infinite;
+            border-radius: 10px;
+        }
+
+        .is-shimmering .actual-content { display: none !important; }
+        .is-shimmering .shimmer-placeholder { display: block !important; }
+
+        /* =========================================================================
+           ENHANCEMENT 2: APPLE FACE ID / CAMERA RETICLE
+           ========================================================================= */
+        .camera-viewfinder {
+            width: 100%;
+            height: 220px;
+            background: #000000;
+            border-radius: 24px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.8);
+        }
+
+        /* FaceID 4-Corner Reticle Brackets */
+        .faceid-reticle {
+            position: absolute;
+            width: 140px;
+            height: 160px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .reticle-corner {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-color: #22c55e;
+            border-style: solid;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .corner-tl { top: 0; left: 0; border-width: 3.5px 0 0 3.5px; border-top-left-radius: 12px; }
+        .corner-tr { top: 0; right: 0; border-width: 3.5px 3.5px 0 0; border-top-right-radius: 12px; }
+        .corner-bl { bottom: 0; left: 0; border-width: 0 0 3.5px 3.5px; border-bottom-left-radius: 12px; }
+        .corner-br { bottom: 0; right: 0; border-width: 0 3.5px 3.5px 0; border-bottom-right-radius: 12px; }
+
+        /* Radar Scanning Beam */
+        .faceid-scanner-beam {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #22c55e, transparent);
+            box-shadow: 0 0 15px #22c55e;
+            animation: faceRadarSweep 1.8s ease-in-out infinite;
+            z-index: 9;
+        }
+
+        @keyframes faceRadarSweep {
+            0%, 100% { top: 8%; opacity: 0.3; }
+            50% { top: 92%; opacity: 1; }
+        }
+
+        .camera-shutter-flash {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #ffffff;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.1s ease;
+            z-index: 30;
+        }
+
+        .camera-shutter-flash.flashing { opacity: 0.95; }
+
+        /* =========================================================================
+           ENHANCEMENT 3: INTERACTIVE BOTTOM ACTION SHEETS
+           ========================================================================= */
+        .action-sheet-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 150;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.28s ease;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .action-sheet-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .action-sheet-body {
+            width: 100%;
+            background: var(--theme-sheet-bg);
+            color: var(--theme-text);
+            border-radius: 32px 32px 0 0;
+            padding: 12px 20px 32px;
+            box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.35);
+            border-top: 1px solid var(--theme-border);
+            transform: translateY(100%);
+            transition: transform 0.34s cubic-bezier(0.32, 0.72, 0, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-height: 85%;
+            overflow-y: auto;
+        }
+
+        .action-sheet-overlay.open .action-sheet-body { transform: translateY(0); }
+
+        .sheet-grabber {
+            width: 42px;
+            height: 5px;
+            background: rgba(142, 142, 147, 0.4);
+            border-radius: 999px;
+            margin: 0 auto;
+            flex-shrink: 0;
+        }
+
+        .sheet-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sheet-title-row h3, .sheet-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--theme-text);
+        }
+
+        .sheet-close-btn {
+            background: var(--theme-header-btn-bg);
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--theme-text);
+            font-size: 0.85rem;
+            transition: transform 0.14s ease;
+        }
+        .sheet-close-btn:active { transform: scale(0.9); }
+
+        /* =========================================================================
+           ENHANCEMENT 4: HAPTIC TOAST / PILL FEEDBACK
+           ========================================================================= */
+        .ios-haptic-pill {
+            position: absolute;
+            top: 56px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-24px);
+            background: rgba(28, 28, 30, 0.94);
+            backdrop-filter: blur(20px);
+            color: #ffffff;
+            padding: 8px 18px;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 200;
+        }
+
+        .ios-haptic-pill.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .interactive-guide {
+            margin-top: 18px;
+            max-width: 580px;
+            text-align: center;
+            background: #1e293b;
+            padding: 14px 18px;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            color: #cbd5e1;
+            font-size: 0.86rem;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Action Toolbar -->
+    <div class="preview-controls">
+        <div class="controls-pill"><i class="fab fa-apple"></i> High-End iOS 18 Showcase</div>
+        <h1>Interactive Apple Experience</h1>
+
+        <div class="action-toolbar">
+            <button class="top-action-pill highlight" onclick="triggerShimmerDemo()">
+                <i class="fas fa-sparkles"></i> Test Skeleton Shimmer
+            </button>
+            <button class="top-action-pill" onclick="openCameraSheet()">
+                <i class="fas fa-camera"></i> Test FaceID Viewfinder
+            </button>
+            <button class="top-action-pill" onclick="openLeaveSheet()">
+                <i class="fas fa-plane-departure"></i> Test Action Sheet
+            </button>
+            <button class="top-action-pill" onclick="openHapticDiagnostics()">
+                <i class="fas fa-mobile-alt"></i> 📳 Haptic Tuner
+            </button>
+            <button class="top-action-pill" id="theme-toggle-top-btn" onclick="cycleThemeMode()">
+                <i class="fas fa-circle-half-stroke" id="theme-top-icon"></i> <span id="theme-top-label">Theme: Auto</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Phone Stage Frame -->
+    <div class="device-stage">
+        <div class="app-viewport" id="app-viewport">
+            
+            <!-- Dynamic Island -->
+            <div class="ios-notch-island">
+                <div class="island-dot"></div>
+                <div style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e; display: none;" id="island-active-dot"></div>
+            </div>
+
+            <!-- iOS Status Bar -->
+            <div class="ios-status-bar">
+                <span id="status-clock">9:41</span>
+                <div style="display: flex; gap: 5px; align-items: center; font-size: 0.78rem;">
+                    <i class="fas fa-signal"></i>
+                    <i class="fas fa-wifi"></i>
+                    <i class="fas fa-battery-full"></i>
+                </div>
+            </div>
+
+            <!-- Haptic Feedback & Alert Pill -->
+            <div class="ios-haptic-pill" id="haptic-pill">
+                <span id="haptic-icon">📳</span>
+                <span id="haptic-text">Haptic feedback</span>
+            </div>
+
+            <div class="app-screens-wrapper">
+                
+                <!-- =========================================================================
+                     SCREEN 1: TODAY (PUNCH, STATS, SKELETON SHIMMER SUPPORT)
+                     ========================================================================= -->
+                <div class="app-screen active" id="screen-today">
+                    
+                    <!-- Header -->
+                    <div class="ios-screen-header">
+                        <div class="user-greeting">
+                            <div class="user-avatar-pill" id="user-avatar-element">
+                                <span class="actual-content">M</span>
+                                <div class="shimmer-placeholder" style="width:100%; height:100%; border-radius:50%;"></div>
+                            </div>
+                            <div>
+                                <div class="actual-content">
+                                    <div style="font-size: 0.76rem; color: var(--subtext-color); font-weight: 700; text-transform: uppercase;">Employee Portal</div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div style="font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em;">Manuj Sharma</div>
+                                        <span class="copy-badge" onclick="copyToClipboard('EMP-8841', 'Employee ID')" title="Tap to copy Employee ID">
+                                            <i class="fas fa-copy"></i> #8841
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="shimmer-placeholder" style="width: 110px; height: 14px; margin-bottom: 4px;"></div>
+                                <div class="shimmer-placeholder" style="width: 140px; height: 18px;"></div>
+                            </div>
+                        </div>
+                        <button class="header-action-btn" onclick="triggerHaptic('light'); showHapticToast('📳 Haptic Tick (12ms)', 'Zero unread alerts')">
+                            <i class="fas fa-bell"></i>
+                            <div class="badge-dot"></div>
+                        </button>
+                    </div>
+
+                    <!-- Hero Punch Card -->
+                    <div class="ios-card hero-punch-container">
+                        
+                        <!-- Shimmer State for Hero Card -->
+                        <div class="shimmer-placeholder" style="width: 120px; height: 26px; border-radius: 999px;"></div>
+                        <div class="shimmer-placeholder" style="width: 220px; height: 44px; margin: 8px 0;"></div>
+                        <div class="shimmer-placeholder" style="width: 160px; height: 16px;"></div>
+                        <div class="shimmer-placeholder" style="width: 100%; height: 52px; border-radius: 18px; margin-top: 10px;"></div>
+
+                        <!-- Actual Content -->
+                        <div class="actual-content" style="width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                            <div class="status-pill off-duty" id="punch-status-badge">
+                                <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--accent); display: inline-block;"></span>
+                                <span id="punch-status-text">Ready to Check In</span>
+                            </div>
+
+                            <div class="digital-clock" id="live-digital-clock">09:41:28 AM</div>
+                            <div class="digital-date" id="live-digital-date">Sunday, Oct 25 • New Delhi</div>
+
+                            <button class="ios-primary-btn" id="main-punch-btn" onclick="openCameraSheet()">
+                                <i class="fas fa-camera"></i> <span id="punch-btn-label">Check In With Selfie</span>
+                            </button>
+
+                            <div class="metric-grid">
+                                <div class="metric-tile" onclick="triggerHaptic('light')">
+                                    <span>Today's Hours</span>
+                                    <strong id="hours-ticker">0h 00m 00s</strong>
+                                </div>
+                                <div class="metric-tile" onclick="openLeaveSheet()">
+                                    <span>Leave Balance</span>
+                                    <strong>22.0 Days <i class="fas fa-chevron-right" style="font-size: 0.7rem; color: var(--accent);"></i></strong>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Inset Group 1: Time Off Requests -->
+                    <div>
+                        <div class="section-headline">Pending & Recent Requests</div>
+                        <div class="ios-inset-group">
+                            
+                            <!-- Shimmer Rows -->
+                            <div class="shimmer-placeholder" style="width: 100%; height: 56px; border-radius: 0;"></div>
+                            <div class="shimmer-placeholder" style="width: 100%; height: 56px; border-radius: 0; margin-top: 1px;"></div>
+
+                            <!-- Actual Rows -->
+                            <div class="actual-content">
+                                <div class="ios-row" onclick="openLeaveSheet()">
+                                    <div class="ios-row-left">
+                                        <div class="ios-icon-box" style="background: var(--ios-blue);"><i class="fas fa-calendar-plus"></i></div>
+                                        <div>
+                                            <div class="row-title">Request Time Off</div>
+                                            <div class="row-subtitle">Casual, Medical, or Half-day</div>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right" style="color: var(--subtext-color); font-size: 0.8rem;"></i>
+                                </div>
+
+                                <div class="ios-row" id="leave-row-1" onclick="openDetailSheet('Year-End Vacation', '28 Dec – 30 Dec (3.0 Days)', 'Approved by Smita Sharma', 'badge-green', 'Approved')">
+                                    <div class="ios-row-left">
+                                        <div class="ios-icon-box" style="background: var(--ios-purple);"><i class="fas fa-umbrella-beach"></i></div>
+                                        <div>
+                                            <div class="row-title">Year-End Vacation</div>
+                                            <div class="row-subtitle">28 Dec – 30 Dec • 3.0 Days</div>
+                                        </div>
+                                    </div>
+                                    <span class="badge badge-green">Approved</span>
+                                </div>
+
+                                <div class="ios-row" id="leave-row-2" onclick="openDetailSheet('Dental Appointment', '15 Nov (Half Day)', 'Pending review by Manager', 'badge-orange', 'Pending')">
+                                    <div class="ios-row-left">
+                                        <div class="ios-icon-box" style="background: var(--ios-orange);"><i class="fas fa-stethoscope"></i></div>
+                                        <div>
+                                            <div class="row-title">Dental Appointment</div>
+                                            <div class="row-subtitle">15 Nov • Half Day (0.5)</div>
+                                        </div>
+                                    </div>
+                                    <span class="badge badge-orange">Pending</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- =========================================================================
+                     SCREEN 2: CALENDAR MATRIX (CLICK DAY TO OPEN ACTION SHEET)
+                     ========================================================================= -->
+                <div class="app-screen" id="screen-calendar">
+                    <div class="ios-screen-header">
+                        <div style="font-size: 1.3rem; font-weight: 800;">Monthly Attendance</div>
+                        <button class="header-action-btn" onclick="openLeaveSheet()"><i class="fas fa-plus"></i></button>
+                    </div>
+
+                    <div class="ios-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                            <strong style="font-size: 1.05rem;">October 2026</strong>
+                            <div style="display: flex; gap: 6px;">
+                                <button class="header-action-btn" style="width:30px; height:30px;" onclick="triggerHaptic('light')"><i class="fas fa-chevron-left" style="font-size:0.7rem;"></i></button>
+                                <button class="header-action-btn" style="width:30px; height:30px;" onclick="triggerHaptic('light')"><i class="fas fa-chevron-right" style="font-size:0.7rem;"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- Mini Calendar Grid -->
+                        <div class="mini-calendar-grid">
+                            <div class="cal-header-day">M</div><div class="cal-header-day">T</div><div class="cal-header-day">W</div><div class="cal-header-day">T</div><div class="cal-header-day">F</div><div class="cal-header-day">S</div><div class="cal-header-day">S</div>
+
+                            <div class="cal-day-cell present" onclick="openDayDetailSheet('Thu, Oct 1, 2026', '09:02 AM', '06:05 PM', '9h 03m', 'Present (On Time)')">1</div>
+                            <div class="cal-day-cell present" onclick="openDayDetailSheet('Fri, Oct 2, 2026', '08:58 AM', '06:00 PM', '9h 02m', 'Present (On Time)')">2</div>
+                            <div class="cal-day-cell present" onclick="openDayDetailSheet('Sat, Oct 3, 2026', '09:15 AM', '06:10 PM', '8h 55m', 'Present (Working Sat)')">3</div>
+                            <div class="cal-day-cell" style="color:var(--subtext-color);" onclick="openDayDetailSheet('Sun, Oct 4, 2026', '—', '—', '0h', 'Weekly Off (Sunday)')">4</div>
+                            <div class="cal-day-cell present" onclick="openDayDetailSheet('Mon, Oct 5, 2026', '09:00 AM', '06:00 PM', '9h 00m', 'Present')">5</div>
+                            <div class="cal-day-cell present" onclick="openDayDetailSheet('Tue, Oct 6, 2026', '09:05 AM', '06:15 PM', '9h 10m', 'Present')">6</div>
+                            <div class="cal-day-cell present" onclick="openDayDetailSheet('Wed, Oct 7, 2026', '08:55 AM', '05:58 PM', '9h 03m', 'Present')">7</div>
+                            <div class="cal-day-cell present" onclick="openDayDetailSheet('Thu, Oct 8, 2026', '09:01 AM', '06:02 PM', '9h 01m', 'Present')">8</div>
+                            <div class="cal-day-cell present" onclick="openDayDetailSheet('Fri, Oct 9, 2026', '09:12 AM', '06:30 PM', '9h 18m', 'Present')">9</div>
+                            <div class="cal-day-cell" style="color:var(--subtext-color);" onclick="openDayDetailSheet('Sat, Oct 10, 2026', '—', '—', '0h', '2nd Saturday Off')">10</div>
+                            <div class="cal-day-cell" style="color:var(--subtext-color);" onclick="openDayDetailSheet('Sun, Oct 11, 2026', '—', '—', '0h', 'Weekly Off (Sunday)')">11</div>
+                            <div class="cal-day-cell present" onclick="openDayDetailSheet('Mon, Oct 12, 2026', '09:04 AM', '06:00 PM', '8h 56m', 'Present')">12</div>
+                            <div class="cal-day-cell present" onclick="openDayDetailSheet('Tue, Oct 13, 2026', '08:50 AM', '06:00 PM', '9h 10m', 'Present')">13</div>
+                            <div class="cal-day-cell present" onclick="openDayDetailSheet('Wed, Oct 14, 2026', '09:00 AM', '06:00 PM', '9h 00m', 'Present')">14</div>
+                            <div class="cal-day-cell present" onclick="openDayDetailSheet('Thu, Oct 15, 2026', '09:10 AM', '06:05 PM', '8h 55m', 'Present')">15</div>
+                            <div class="cal-day-cell present" onclick="openDayDetailSheet('Fri, Oct 16, 2026', '09:00 AM', '06:00 PM', '9h 00m', 'Present')">16</div>
+                            <div class="cal-day-cell present" onclick="openDayDetailSheet('Sat, Oct 17, 2026', '09:00 AM', '02:00 PM', '5h 00m', 'Approved Half Day')">17</div>
+                            <div class="cal-day-cell" style="color:var(--subtext-color);" onclick="openDayDetailSheet('Sun, Oct 18, 2026', '—', '—', '0h', 'Weekly Off (Sunday)')">18</div>
+                            <div class="cal-day-cell present" onclick="openDayDetailSheet('Mon, Oct 19, 2026', '09:03 AM', '06:00 PM', '8h 57m', 'Present')">19</div>
+                            <div class="cal-day-cell present" onclick="openDayDetailSheet('Tue, Oct 20, 2026', '08:55 AM', '06:01 PM', '9h 06m', 'Present')">20</div>
+                            <div class="cal-day-cell present" onclick="openDayDetailSheet('Wed, Oct 21, 2026', '09:00 AM', '06:00 PM', '9h 00m', 'Present')">21</div>
+                            <div class="cal-day-cell present" onclick="openDayDetailSheet('Thu, Oct 22, 2026', '09:02 AM', '06:04 PM', '9h 02m', 'Present')">22</div>
+                            <div class="cal-day-cell present" onclick="openDayDetailSheet('Fri, Oct 23, 2026', '09:00 AM', '06:00 PM', '9h 00m', 'Present')">23</div>
+                            <div class="cal-day-cell" style="color:var(--subtext-color);" onclick="openDayDetailSheet('Sat, Oct 24, 2026', '—', '—', '0h', '4th Saturday Off')">24</div>
+                            <div class="cal-day-cell selected" onclick="openDayDetailSheet('Today, Oct 25, 2026', '09:41 AM', 'Active', 'Counting...', 'Clocked In')">25</div>
+                        </div>
+
+                        <div style="margin-top:14px; padding:10px 14px; background:rgba(142,142,147,0.08); border-radius:14px; font-size:0.84rem; font-weight:600; color:var(--text-color); display:flex; align-items:center; gap:8px;">
+                            <span>👆</span> <strong>Tap any calendar day</strong> to slide up its full biometric & punch sheet.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- =========================================================================
+                     SCREEN 3: TEAM & DIRECTORY
+                     ========================================================================= -->
+                <div class="app-screen" id="screen-team">
+                    <div class="ios-screen-header">
+                        <div style="font-size: 1.3rem; font-weight: 800;">Team Directory</div>
+                        <button class="header-action-btn" onclick="triggerHaptic('light'); showHapticToast('📳 Haptic Tick', 'Add Member dialog')"><i class="fas fa-user-plus"></i></button>
+                    </div>
+
+                    <div class="ios-card" style="padding: 10px 14px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <i class="fas fa-search" style="color:var(--subtext-color);"></i>
+                            <input type="text" placeholder="Search team member..." style="border:none; background:transparent; outline:none; font-size:0.95rem; color:var(--text-color); width:100%;">
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="section-headline">Active Team Members</div>
+                        <div class="ios-inset-group">
+                            <div class="ios-row">
+                                <div class="ios-row-left">
+                                    <div class="ios-icon-box" style="background:#0ea5a4;">S</div>
+                                    <div>
+                                        <div class="row-title">Smita Sharma</div>
+                                        <div class="row-subtitle">System Owner • On Duty</div>
+                                    </div>
+                                </div>
+                                <span class="badge badge-green">Active</span>
+                            </div>
+
+                            <div class="ios-row">
+                                <div class="ios-row-left">
+                                    <div class="ios-icon-box" style="background:#3b82f6;">D</div>
+                                    <div>
+                                        <div class="row-title">Dinesh Kumar</div>
+                                        <div class="row-subtitle">Manager • Checked in 09:12 AM</div>
+                                    </div>
+                                </div>
+                                <span class="badge badge-green">Active</span>
+                            </div>
+
+                            <div class="ios-row">
+                                <div class="ios-row-left">
+                                    <div class="ios-icon-box" style="background:#8b5cf6;">A</div>
+                                    <div>
+                                        <div class="row-title">Atul Verma</div>
+                                        <div class="row-subtitle">Employee • Checked in 09:00 AM</div>
+                                    </div>
+                                </div>
+                                <label class="ios-toggle" onclick="event.stopPropagation();">
+                                    <input type="checkbox" checked onchange="triggerHaptic('medium'); showHapticToast('📳 Haptic Switch (22ms)', 'Atul status: ' + (this.checked ? 'Active' : 'Inactive'))">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="ios-row">
+                                <div class="ios-row-left">
+                                    <div class="ios-icon-box" style="background:#ec4899;">K</div>
+                                    <div>
+                                        <div class="row-title">Kamini Joshi</div>
+                                        <div class="row-subtitle">Employee • On Leave (Medical)</div>
+                                    </div>
+                                </div>
+                                <span class="badge badge-orange">On Leave</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- =========================================================================
+                     SCREEN 4: SETTINGS & HAPTIC CONTROLS
+                     ========================================================================= -->
+                <div class="app-screen" id="screen-profile">
+                    <div class="ios-screen-header">
+                        <div style="font-size: 1.3rem; font-weight: 800;">Settings & Haptics</div>
+                        <button class="header-action-btn" onclick="triggerHaptic('selection'); showHapticToast('📳 Haptic Selection', 'Simulated Logout')"><i class="fas fa-sign-out-alt"></i></button>
+                    </div>
+
+                    <!-- Live Accent Color Customizer -->
+                    <div class="ios-card">
+                        <div style="font-size:0.88rem; font-weight:700; margin-bottom:4px;">Live Apple Brand Accent</div>
+                        <div style="font-size:0.78rem; color:var(--subtext-color); margin-bottom:12px;">Tap any color to test live haptic vibration & color morphing:</div>
+                        <div style="display:flex; justify-content:space-between;">
+                            <div class="color-dot active-color" style="width:36px; height:36px; border-radius:50%; background:#0ea5a4; cursor:pointer;" onclick="changeBrandColor('#0ea5a4')"></div>
+                            <div class="color-dot" style="width:36px; height:36px; border-radius:50%; background:#007AFF; cursor:pointer;" onclick="changeBrandColor('#007AFF')"></div>
+                            <div class="color-dot" style="width:36px; height:36px; border-radius:50%; background:#AF52DE; cursor:pointer;" onclick="changeBrandColor('#AF52DE')"></div>
+                            <div class="color-dot" style="width:36px; height:36px; border-radius:50%; background:#FF9500; cursor:pointer;" onclick="changeBrandColor('#FF9500')"></div>
+                            <div class="color-dot" style="width:36px; height:36px; border-radius:50%; background:#FF2D55; cursor:pointer;" onclick="changeBrandColor('#FF2D55')"></div>
+                            <div class="color-dot" style="width:36px; height:36px; border-radius:50%; background:#34C759; cursor:pointer;" onclick="changeBrandColor('#34C759')"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="section-headline">Appearance & Dark Mode</div>
+                        <div class="ios-inset-group">
+                            <div class="ios-row">
+                                <div class="ios-row-left">
+                                    <div class="ios-icon-box" style="background:#1C1C1E; border:1px solid rgba(255,255,255,0.2);"><i class="fas fa-moon"></i></div>
+                                    <div>
+                                        <div class="row-title">Dark Mode</div>
+                                        <div class="row-subtitle" id="dark-mode-status-text">Matches System Device Setting</div>
+                                    </div>
+                                </div>
+                                <label class="ios-toggle">
+                                    <input type="checkbox" id="dark-mode-toggle" onchange="handleDarkModeToggle(this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="ios-row" onclick="cycleThemeMode()">
+                                <div class="ios-row-left">
+                                    <div class="ios-icon-box" style="background:var(--ios-blue);"><i class="fas fa-circle-half-stroke"></i></div>
+                                    <div>
+                                        <div class="row-title">Theme Mode</div>
+                                        <div class="row-subtitle">Tap to cycle: Auto &bull; Dark &bull; Light</div>
+                                    </div>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:6px; color:var(--subtext-color); font-size:0.85rem; font-weight:700;">
+                                    <span id="theme-pref-badge">System Auto</span>
+                                    <i class="fas fa-chevron-right" style="font-size:0.7rem;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="section-headline">Haptics & Hardware Policy</div>
+                        <div class="ios-inset-group">
+                            <div class="ios-row">
+                                <div class="ios-row-left">
+                                    <div class="ios-icon-box" style="background:var(--ios-purple);"><i class="fas fa-hand-pointer"></i></div>
+                                    <div>
+                                        <div class="row-title">Apple Tactile Haptics</div>
+                                        <div class="row-subtitle">Vibrate on taps, toggles & punches</div>
+                                    </div>
+                                </div>
+                                <label class="ios-toggle">
+                                    <input type="checkbox" checked onchange="triggerHaptic('success'); showHapticToast('📳 Haptic Pulse (Success)', 'Haptics enabled')">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="ios-row">
+                                <div class="ios-row-left">
+                                    <div class="ios-icon-box" style="background:var(--ios-blue);"><i class="fas fa-desktop"></i></div>
+                                    <div>
+                                        <div class="row-title">Desktop Check-In</div>
+                                        <div class="row-subtitle">Permit logins from desktop PCs</div>
+                                    </div>
+                                </div>
+                                <label class="ios-toggle">
+                                    <input type="checkbox" checked onchange="triggerHaptic('medium'); showHapticToast('📳 Haptic Switch (22ms)', 'Desktop access: Enabled')">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="ios-row">
+                                <div class="ios-row-left">
+                                    <div class="ios-icon-box" style="background:var(--ios-green);"><i class="fas fa-camera"></i></div>
+                                    <div>
+                                        <div class="row-title">Face ID Verification</div>
+                                        <div class="row-subtitle">Require biometric camera check-in</div>
+                                    </div>
+                                </div>
+                                <label class="ios-toggle">
+                                    <input type="checkbox" checked onchange="triggerHaptic('light')">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Floating Translucent Glass Bottom Tab Bar -->
+            <div class="ios-tab-bar">
+                <button class="tab-btn active" onclick="switchTab('screen-today', this)">
+                    <i class="fas fa-clock"></i>
+                    <span>Today</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('screen-calendar', this)">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Matrix</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('screen-team', this)">
+                    <i class="fas fa-users"></i>
+                    <span>Team</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('screen-profile', this)">
+                    <i class="fas fa-sliders-h"></i>
+                    <span>Settings</span>
+                </button>
+            </div>
+
+            <!-- =========================================================================
+                 ACTION SHEET 1: FACE ID / CAMERA RETICLE VIEWFINDER SHEET
+                 ========================================================================= -->
+            <div class="action-sheet-overlay" id="camera-sheet" onclick="handleOverlayClick(event, 'camera-sheet')">
+                <div class="action-sheet-body" onclick="event.stopPropagation()">
+                    <div class="sheet-grabber"></div>
+                    
+                    <div class="sheet-title-row">
+                        <h3><i class="fas fa-fingerprint" style="color:var(--accent);"></i> Face ID Punch</h3>
+                        <button class="sheet-close-btn" onclick="closeSheet('camera-sheet')"><i class="fas fa-times"></i></button>
+                    </div>
+
+                    <!-- Apple Face ID Reticle Viewfinder -->
+                    <div class="camera-viewfinder" id="viewfinder-box">
+                        <div class="faceid-reticle" id="faceid-reticle-el">
+                            <div class="reticle-corner corner-tl"></div>
+                            <div class="reticle-corner corner-tr"></div>
+                            <div class="reticle-corner corner-bl"></div>
+                            <div class="reticle-corner corner-br"></div>
+                            <div class="faceid-scanner-beam" id="scanner-beam"></div>
+                        </div>
+
+                        <div class="camera-shutter-flash" id="camera-flash"></div>
+                        <video id="live-camera-video" playsinline muted autoplay style="width:100%; height:100%; object-fit:cover; display:none; transform:scaleX(-1);"></video>
+                        <div id="camera-standby-placeholder" style="text-align:center; color:#cbd5e1; font-size:0.85rem; z-index:2;">
+                            <i class="fas fa-user-circle" style="font-size:3.5rem; display:block; margin-bottom:8px; color:var(--accent);"></i>
+                            <span id="face-detect-text">Align face in frame...</span>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Reticle Status Pill -->
+                    <div style="display:flex; justify-content:center;">
+                        <div id="face-lock-pill" style="display:inline-flex; align-items:center; gap:6px; padding:6px 16px; border-radius:999px; font-size:0.78rem; font-weight:800; background:rgba(34, 197, 94, 0.15); color:#22c55e;">
+                            <i class="fas fa-check-circle"></i> <span id="face-lock-text">Face ID Locked On</span>
+                        </div>
+                    </div>
+
+                    <button class="ios-primary-btn" id="shutter-snap-btn" onclick="snapSelfie()">
+                        <i class="fas fa-camera"></i> Snap Photo & Confirm Check-In
+                    </button>
+                </div>
+            </div>
+
+            <!-- =========================================================================
+                 ACTION SHEET 2: APPLY FOR TIME OFF (LEAVE REQUEST)
+                 ========================================================================= -->
+            <div class="action-sheet-overlay" id="leave-sheet" onclick="handleOverlayClick(event, 'leave-sheet')">
+                <div class="action-sheet-body" onclick="event.stopPropagation()">
+                    <div class="sheet-grabber"></div>
+                    <div class="sheet-title-row">
+                        <h3><i class="fas fa-plane" style="color:var(--accent);"></i> Request Time Off</h3>
+                        <button class="sheet-close-btn" onclick="closeSheet('leave-sheet')"><i class="fas fa-times"></i></button>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+                        <div>
+                            <label style="font-size:0.75rem; font-weight:700; color:var(--subtext-color); display:block; margin-bottom:4px; text-transform:uppercase;">Start Date</label>
+                            <input type="date" value="2026-11-10" style="width:100%; padding:12px; border-radius:14px; border:1px solid var(--border-color); background:rgba(142,142,147,0.08); color:var(--text-color); font-weight:700; font-size:0.95rem;">
+                        </div>
+
+                        <div>
+                            <label style="font-size:0.75rem; font-weight:700; color:var(--subtext-color); display:block; margin-bottom:4px; text-transform:uppercase;">Duration</label>
+                            <div style="display:flex; gap:8px;">
+                                <button type="button" class="top-action-pill highlight" style="flex:1; justify-content:center; padding:10px;" onclick="selectLeaveType(this)">Full Day</button>
+                                <button type="button" class="top-action-pill" style="flex:1; justify-content:center; padding:10px;" onclick="selectLeaveType(this)">Half Day</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                                <label style="font-size:0.75rem; font-weight:700; color:var(--subtext-color); text-transform:uppercase;">Reason</label>
+                                <span id="char-counter" style="font-size:0.72rem; color:var(--subtext-color); font-weight:600;">0 / 250</span>
+                            </div>
+                            <textarea id="leave-reason-input" placeholder="e.g., Attending family wedding in Jaipur" rows="3" oninput="updateCharCount(this)" style="width:100%; padding:12px; border-radius:14px; border:1px solid var(--border-color); background:rgba(142,142,147,0.08); color:var(--text-color); font-family:inherit; font-size:0.92rem;"></textarea>
+                        </div>
+                    </div>
+
+                    <button class="ios-primary-btn" onclick="submitLeaveRequest()">
+                        <i class="fas fa-paper-plane"></i> Submit Leave Request
+                    </button>
+                </div>
+            </div>
+
+            <!-- =========================================================================
+                 ACTION SHEET 3: CALENDAR DAY PUNCH INSPECTOR SHEET
+                 ========================================================================= -->
+            <div class="action-sheet-overlay" id="day-detail-sheet" onclick="handleOverlayClick(event, 'day-detail-sheet')">
+                <div class="action-sheet-body" onclick="event.stopPropagation()">
+                    <div class="sheet-grabber"></div>
+                    
+                    <div class="sheet-title-row">
+                        <div>
+                            <div style="font-size:0.76rem; color:var(--subtext-color); font-weight:700; text-transform:uppercase;">Punch Record Inspection</div>
+                            <h3 id="sheet-day-title">Thu, Oct 1, 2026</h3>
+                        </div>
+                        <button class="sheet-close-btn" onclick="closeSheet('day-detail-sheet')"><i class="fas fa-times"></i></button>
+                    </div>
+
+                    <div class="ios-inset-group" style="margin: 4px 0;">
+                        <div class="ios-row">
+                            <div class="ios-row-left">
+                                <div class="ios-icon-box" style="background:var(--ios-green);"><i class="fas fa-sign-in-alt"></i></div>
+                                <div>
+                                    <div class="row-title">Punch In Time</div>
+                                    <div class="row-subtitle" id="sheet-in-time">09:02 AM</div>
+                                </div>
+                            </div>
+                            <span class="badge badge-green" id="sheet-status-badge">Verified</span>
+                        </div>
+
+                        <div class="ios-row">
+                            <div class="ios-row-left">
+                                <div class="ios-icon-box" style="background:var(--ios-orange);"><i class="fas fa-sign-out-alt"></i></div>
+                                <div>
+                                    <div class="row-title">Punch Out Time</div>
+                                    <div class="row-subtitle" id="sheet-out-time">06:05 PM</div>
+                                </div>
+                            </div>
+                            <strong style="font-size:0.9rem;" id="sheet-duration">9h 03m</strong>
+                        </div>
+
+                        <div class="ios-row">
+                            <div class="ios-row-left">
+                                <div class="ios-icon-box" style="background:var(--ios-blue);"><i class="fas fa-map-marker-alt"></i></div>
+                                <div>
+                                    <div class="row-title">GPS Coordinates</div>
+                                    <div class="row-subtitle">28.6139° N, 77.2090° E (New Delhi HQ)</div>
+                                </div>
+                            </div>
+                            <i class="fas fa-check" style="color:var(--ios-green);"></i>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding: 0 4px;">
+                        <span style="font-size: 0.8rem; color: var(--subtext-color);">Record Reference</span>
+                        <span class="copy-badge" onclick="copyToClipboard('ATT-2026-OCT-15', 'Attendance Record ID')" title="Tap to copy record reference">
+                            <i class="fas fa-copy"></i> #ATT-2026-OCT-15
+                        </span>
+                    </div>
+
+                    <button class="ios-primary-btn" onclick="closeSheet('day-detail-sheet')">
+                        Done
+                    </button>
+                </div>
+            </div>
+
+            <!-- =========================================================================
+                 BOTTOM SHEET 4: HAPTIC CALIBRATION & ANDROID DIAGNOSTICS
+                 ========================================================================= -->
+            <div class="action-sheet-overlay" id="haptic-sheet" onclick="handleOverlayClick(event, 'haptic-sheet')">
+                <div class="action-sheet-body">
+                    <div class="sheet-grabber"></div>
+                    <div class="sheet-header">
+                        <div class="sheet-title">📳 Haptic Calibration</div>
+                        <button class="sheet-close-btn" onclick="closeSheet('haptic-sheet')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div style="font-size: 0.85rem; color: var(--subtext-color); margin-bottom: 14px; line-height: 1.4;">
+                        Android vibration motors (ERM/LRA) require at least 35ms–75ms pulse length to overcome physical inertia (compared to Apple's Taptic engine). Test pulse strengths below:
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+                        <button class="ios-primary-btn" style="background: rgba(14, 165, 164, 0.12); color: var(--accent); border: 1px solid var(--accent);" onclick="testVibrationStrength('Light (40ms)', 40)">
+                            <i class="fas fa-hand-pointer"></i> Light Tap (40ms Pulse)
+                        </button>
+                        <button class="ios-primary-btn" style="background: rgba(14, 165, 164, 0.12); color: var(--accent); border: 1px solid var(--accent);" onclick="testVibrationStrength('Medium (75ms)', 75)">
+                            <i class="fas fa-hand-rock"></i> Medium Tap (75ms Pulse)
+                        </button>
+                        <button class="ios-primary-btn" style="background: rgba(14, 165, 164, 0.12); color: var(--accent); border: 1px solid var(--accent);" onclick="testVibrationStrength('Heavy (120ms)', 120)">
+                            <i class="fas fa-bolt"></i> Strong / Heavy (120ms Pulse)
+                        </button>
+                        <button class="ios-primary-btn" onclick="testVibrationStrength('Double Pulse', [50, 60, 50])">
+                            <i class="fas fa-check-circle"></i> Double Pulse Success Pattern
+                        </button>
+                    </div>
+
+                    <div style="background: rgba(255, 149, 0, 0.1); border: 1px solid rgba(255, 149, 0, 0.3); border-radius: 14px; padding: 12px; font-size: 0.8rem; color: #ff9f0a; line-height: 1.45;">
+                        <strong>Android Checklist if phone doesn't vibrate:</strong><br>
+                        1. <strong>Touch Feedback Enabled:</strong> Go to <em>Settings &rarr; Sound & Vibration &rarr; Vibration & Haptics &rarr; Touch feedback</em> (must be ON in Android).<br>
+                        2. <strong>Battery Saver Mode:</strong> Android turns off haptic motors globally when battery saver is active.<br>
+                        3. <strong>Silent Mode:</strong> Some phones (Samsung/Xiaomi) suppress vibration when phone is set to Mute/Silent without vibrate.
+                    </div>
+
+                    <button class="ios-primary-btn" style="margin-top: 14px;" onclick="closeSheet('haptic-sheet')">
+                        Done
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Usage Banner -->
+    <div class="interactive-guide">
+        💡 <strong>Interactive Features:</strong><br>
+        1. <strong>Native App Feel</strong>: Text is completely unselectable with long-press menus disabled.<br>
+        2. <strong>Tap-to-Copy</strong>: Tap the <span class="copy-badge" style="display:inline-flex; padding:1px 5px;"><i class="fas fa-copy"></i> #8841</span> badge beside the user's name to copy instantly.<br>
+        3. <strong>Haptic Micro-Interactions</strong>: Tap tabs, buttons, or open <strong>📳 Haptic Tuner</strong> to test tactile feedback.
+    </div>
+
+    <script>
+        // Synthetic Audio Haptic Engine (for instant tactile audio tick)
+        let audioCtx = null;
+        function playHapticTickSound() {
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(140, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.025);
+                gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.025);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.025);
+            } catch (e) {
+                // AudioContext not available or blocked
+            }
+        }
+
+        // Apple & Android Adaptive Haptic Simulation Engine
+        function triggerHaptic(style = 'light') {
+            // Play crisp tactile sound pulse alongside vibration
+            playHapticTickSound();
+
+            if ('vibrate' in navigator) {
+                try {
+                    // Modern Android ERM/LRA motors require >= 35ms pulse duration to overcome physical inertia
+                    if (style === 'selection') navigator.vibrate(30);
+                    else if (style === 'light') navigator.vibrate(40);
+                    else if (style === 'medium') navigator.vibrate(75);
+                    else if (style === 'heavy') navigator.vibrate(120);
+                    else if (style === 'success') navigator.vibrate([45, 60, 50]);
+                    else if (style === 'error') navigator.vibrate([60, 50, 60, 50, 90]);
+                    else navigator.vibrate(40);
+                } catch (e) {
+                    console.warn('Vibration API error:', e);
+                }
+            }
+        }
+
+        function openHapticDiagnostics() {
+            triggerHaptic('light');
+            document.getElementById('haptic-sheet').classList.add('open');
+        }
+
+        function testVibrationStrength(label, duration) {
+            playHapticTickSound();
+            if ('vibrate' in navigator) {
+                try {
+                    navigator.vibrate(duration);
+                } catch(e) {}
+            }
+            showHapticToast('📳 Haptic ' + label, `Fired ${JSON.stringify(duration)}ms pulse`);
+        }
+
+        // 1-Tap Copy Helper
+        function copyToClipboard(text, label) {
+            triggerHaptic('success');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showHapticToast('📋 Copied!', `${label} (${text}) copied to clipboard`);
+                }).catch(() => {
+                    fallbackCopy(text, label);
+                });
+            } else {
+                fallbackCopy(text, label);
+            }
+        }
+
+        function fallbackCopy(text, label) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            try {
+                document.execCommand('copy');
+                showHapticToast('📋 Copied!', `${label} (${text}) copied`);
+            } catch (err) {}
+            document.body.removeChild(ta);
+        }
+
+        let hapticPillTimeout;
+        function showHapticToast(hapticLabel, text) {
+            const pill = document.getElementById('haptic-pill');
+            document.getElementById('haptic-icon').textContent = hapticLabel.includes('📳') ? '📳' : '✨';
+            document.getElementById('haptic-text').textContent = text;
+            pill.classList.add('show');
+            clearTimeout(hapticPillTimeout);
+            hapticPillTimeout = setTimeout(() => {
+                pill.classList.remove('show');
+            }, 2400);
+        }
+
+        // Live Clock Ticker
+        function updateLiveClocks() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('live-digital-clock').textContent = timeStr;
+            document.getElementById('status-clock').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        setInterval(updateLiveClocks, 1000);
+        updateLiveClocks();
+
+        // Working Hours Stopwatch
+        let secondsWorked = 0;
+        let isClockedIn = false;
+        setInterval(() => {
+            if (isClockedIn) {
+                secondsWorked++;
+                const h = Math.floor(secondsWorked / 3600);
+                const m = Math.floor((secondsWorked % 3600) / 60);
+                const s = secondsWorked % 60;
+                document.getElementById('hours-ticker').textContent = `${h}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
+            }
+        }, 1000);
+
+        // Tab Navigation with Haptic Tick
+        function switchTab(screenId, btn) {
+            triggerHaptic('selection');
+            showHapticToast('📳 Haptic Selection (8ms)', btn.querySelector('span').textContent + ' view loaded');
+
+            document.querySelectorAll('.app-screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        // Shimmer Skeleton Simulator
+        function triggerShimmerDemo() {
+            triggerHaptic('medium');
+            const viewport = document.getElementById('app-viewport');
+            viewport.classList.add('is-shimmering');
+            showHapticToast('✨ Skeleton Shimmer', 'Loading data from Turso Cloud...');
+
+            setTimeout(() => {
+                viewport.classList.remove('is-shimmering');
+                triggerHaptic('success');
+                showHapticToast('✅ Loaded', 'Data rendered cleanly');
+            }, 2200);
+        }
+
+        // Face ID & Camera Viewfinder Flow
+        let cameraStream = null;
+        function openCameraSheet() {
+            triggerHaptic('medium');
+            document.getElementById('camera-sheet').classList.add('open');
+            startCameraPreview();
+        }
+
+        async function startCameraPreview() {
+            const video = document.getElementById('live-camera-video');
+            const placeholder = document.getElementById('camera-standby-placeholder');
+            const lockPill = document.getElementById('face-lock-pill');
+            const lockText = document.getElementById('face-lock-text');
+
+            lockText.textContent = 'Scanning Face...';
+            lockPill.style.color = '#0ea5a4';
+            lockPill.style.background = 'rgba(14, 165, 164, 0.15)';
+
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                video.srcObject = cameraStream;
+                video.style.display = 'block';
+                placeholder.style.display = 'none';
+            } catch (e) {
+                video.style.display = 'none';
+                placeholder.style.display = 'block';
+            }
+
+            // Lock on after 1.2s
+            setTimeout(() => {
+                triggerHaptic('success');
+                lockText.textContent = '✓ Face ID Locked & Verified';
+                lockPill.style.color = '#22c55e';
+                lockPill.style.background = 'rgba(34, 197, 94, 0.15)';
+            }, 1200);
+        }
+
+        function stopCameraPreview() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(t => t.stop());
+                cameraStream = null;
+            }
+        }
+
+        // Snap Selfie Photo Shutter
+        function snapSelfie() {
+            triggerHaptic('success');
+            const flash = document.getElementById('camera-flash');
+            flash.classList.add('flashing');
+
+            setTimeout(() => {
+                flash.classList.remove('flashing');
+                closeSheet('camera-sheet');
+
+                isClockedIn = !isClockedIn;
+                const punchBtn = document.getElementById('main-punch-btn');
+                const badge = document.getElementById('punch-status-badge');
+                const badgeText = document.getElementById('punch-status-text');
+                const islandDot = document.getElementById('island-active-dot');
+
+                if (isClockedIn) {
+                    badge.className = 'status-pill on-duty';
+                    badgeText.textContent = 'On Duty (Checked In 09:41 AM)';
+                    punchBtn.className = 'ios-primary-btn checkout-mode';
+                    document.getElementById('punch-btn-label').textContent = 'Time to Check Out';
+                    islandDot.style.display = 'block';
+                    showHapticToast('📳 Haptic Pulse (Success)', 'Selfie Verified • Checked In');
+                } else {
+                    badge.className = 'status-pill off-duty';
+                    badgeText.textContent = 'Day Complete (Checked Out)';
+                    punchBtn.className = 'ios-primary-btn';
+                    document.getElementById('punch-btn-label').textContent = 'Check In Tomorrow';
+                    islandDot.style.display = 'none';
+                    showHapticToast('📳 Haptic Pulse', 'Checked Out • Have a great evening!');
+                }
+            }, 180);
+        }
+
+        // Leave Application Sheet
+        function openLeaveSheet() {
+            triggerHaptic('medium');
+            document.getElementById('leave-sheet').classList.add('open');
+        }
+
+        function updateCharCount(textarea) {
+            document.getElementById('char-counter').textContent = `${textarea.value.length} / 250`;
+        }
+
+        function submitLeaveRequest() {
+            triggerHaptic('success');
+            const reason = document.getElementById('leave-reason-input').value.trim() || 'Casual Work';
+            closeSheet('leave-sheet');
+            showHapticToast('📳 Haptic Success', `Leave submitted: "${reason}"`);
+        }
+
+        function selectLeaveType(btn) {
+            triggerHaptic('selection');
+            btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('highlight'));
+            btn.classList.add('highlight');
+        }
+
+        // Calendar Day Inspector Sheet
+        function openDayDetailSheet(dayTitle, inTime, outTime, duration, status) {
+            triggerHaptic('medium');
+            document.getElementById('sheet-day-title').textContent = dayTitle;
+            document.getElementById('sheet-in-time').textContent = inTime;
+            document.getElementById('sheet-out-time').textContent = outTime;
+            document.getElementById('sheet-duration').textContent = duration;
+            document.getElementById('sheet-status-badge').textContent = status;
+            document.getElementById('day-detail-sheet').classList.add('open');
+        }
+
+        function openDetailSheet(title, sub, reviewer, badgeClass, badgeLabel) {
+            triggerHaptic('light');
+            openDayDetailSheet(title, 'Requested: ' + sub, 'Review: ' + reviewer, 'Status', badgeLabel);
+        }
+
+        // General Sheet Closer
+        function closeSheet(id) {
+            triggerHaptic('light');
+            document.getElementById(id).classList.remove('open');
+            if (id === 'camera-sheet') stopCameraPreview();
+        }
+
+        function handleOverlayClick(event, sheetId) {
+            if (event.target === document.getElementById(sheetId)) {
+                closeSheet(sheetId);
+            }
+        }
+
+        // Live Brand Color Morphing
+        function changeBrandColor(colorHex) {
+            triggerHaptic('selection');
+            document.documentElement.style.setProperty('--accent', colorHex);
+            const r = parseInt(colorHex.slice(1, 3), 16);
+            const g = parseInt(colorHex.slice(3, 5), 16);
+            const b = parseInt(colorHex.slice(5, 7), 16);
+            document.documentElement.style.setProperty('--accent-rgb', `${r}, ${g}, ${b}`);
+            showHapticToast('📳 Haptic Tick', `Brand color updated: ${colorHex}`);
+        }
+
+        // =========================================================================
+        // APPLE iOS 18 THEME ENGINE (System Auto • Dark Mode • Light Mode)
+        // =========================================================================
+        let currentThemePreference = localStorage.getItem('tallyup_theme_pref') || 'system';
+        const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+        function applyTheme(pref) {
+            currentThemePreference = pref;
+            localStorage.setItem('tallyup_theme_pref', pref);
+
+            const isSystemDark = darkModeQuery.matches;
+            const effectiveDark = pref === 'dark' || (pref === 'system' && isSystemDark);
+
+            if (pref === 'system') {
+                document.documentElement.removeAttribute('data-theme');
+            } else {
+                document.documentElement.setAttribute('data-theme', pref);
+            }
+
+            // Sync Top Toolbar Pill
+            const topLabel = document.getElementById('theme-top-label');
+            const topIcon = document.getElementById('theme-top-icon');
+            if (topLabel && topIcon) {
+                if (pref === 'system') {
+                    topLabel.textContent = isSystemDark ? 'Auto (Dark)' : 'Auto (Light)';
+                    topIcon.className = 'fas fa-circle-half-stroke';
+                } else if (pref === 'dark') {
+                    topLabel.textContent = 'Theme: Dark';
+                    topIcon.className = 'fas fa-moon';
+                } else {
+                    topLabel.textContent = 'Theme: Light';
+                    topIcon.className = 'fas fa-sun';
+                }
+            }
+
+            // Sync Profile Settings Toggle & Text
+            const profileToggle = document.getElementById('dark-mode-toggle');
+            const profileStatus = document.getElementById('dark-mode-status-text');
+            const profileBadge = document.getElementById('theme-pref-badge');
+            if (profileToggle) {
+                profileToggle.checked = effectiveDark;
+            }
+            if (profileStatus) {
+                if (pref === 'system') {
+                    profileStatus.textContent = isSystemDark ? 'Auto • Device in Dark Mode' : 'Auto • Device in Light Mode';
+                } else if (pref === 'dark') {
+                    profileStatus.textContent = 'Manual: Always Dark Mode';
+                } else {
+                    profileStatus.textContent = 'Manual: Always Light Mode';
+                }
+            }
+            if (profileBadge) {
+                profileBadge.textContent = pref === 'system' ? 'System Auto' : (pref === 'dark' ? 'Dark' : 'Light');
+            }
+        }
+
+        // Real-time listener: device switches between Light and Dark mode
+        darkModeQuery.addEventListener('change', (e) => {
+            if (currentThemePreference === 'system') {
+                applyTheme('system');
+                showHapticToast('🌓 Device Mode Changed', e.matches ? 'Switched to Dark Mode' : 'Switched to Light Mode');
+            }
+        });
+
+        // Interactive Theme Cycler (Auto -> Dark -> Light -> Auto)
+        function cycleThemeMode() {
+            triggerHaptic('selection');
+            let nextPref = 'system';
+            if (currentThemePreference === 'system') nextPref = 'dark';
+            else if (currentThemePreference === 'dark') nextPref = 'light';
+            else if (currentThemePreference === 'light') nextPref = 'system';
+
+            applyTheme(nextPref);
+            showHapticToast('🌓 Theme Switched', nextPref === 'system' ? 'Matching Device System Setting' : (nextPref === 'dark' ? 'Dark Mode Forced' : 'Light Mode Forced'));
+        }
+
+        function handleDarkModeToggle(isChecked) {
+            triggerHaptic('medium');
+            const newPref = isChecked ? 'dark' : 'light';
+            applyTheme(newPref);
+            showHapticToast(isChecked ? '🌙 Dark Mode' : '☀️ Light Mode', isChecked ? 'Apple Dark Mode active' : 'Apple Light Mode active');
+        }
+
+        // Initialize Theme on load
+        applyTheme(currentThemePreference);
+
+        // =========================================================================
+        // ZERO ZOOM ENGINE (Blocks Pinch, Double-Tap, Trackpad, Wheel & Keys)
+        // =========================================================================
+
+        // 1. Prevent Trackpad Pinch & Ctrl + Mouse Wheel Zoom (Laptops & Desktops)
+        window.addEventListener('wheel', (event) => {
+            if (event.ctrlKey) {
+                event.preventDefault();
+            }
+        }, { passive: false });
+
+        // 2. Prevent Keyboard Zoom Shortcuts (Ctrl/Cmd + Plus, Minus, Zero)
+        window.addEventListener('keydown', (event) => {
+            if ((event.ctrlKey || event.metaKey) && (
+                event.key === '+' || 
+                event.key === '-' || 
+                event.key === '=' || 
+                event.key === '_' || 
+                event.key === '0' ||
+                event.keyCode === 187 || 
+                event.keyCode === 189 || 
+                event.keyCode === 107 || 
+                event.keyCode === 109 || 
+                event.keyCode === 96  || 
+                event.keyCode === 48
+            )) {
+                event.preventDefault();
+            }
+        });
+
+        // 3. Prevent Safari / iOS Trackpad & Multi-touch Gesture Pinch Zoom
+        document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+        document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+        document.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
+
+        // 4. Prevent Multi-Finger Pinch Zoom on Mobile & Touchscreen Laptops
+        document.addEventListener('touchstart', (event) => {
+            if (event.touches && event.touches.length > 1) {
+                event.preventDefault();
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchmove', (event) => {
+            if (event.touches && event.touches.length > 1) {
+                event.preventDefault();
+            }
+        }, { passive: false });
+
+        // 5. Prevent Fast Double-Tap to Zoom on Mobile Browsers
+        let lastTouchTime = 0;
+        document.addEventListener('touchend', (event) => {
+            const now = Date.now();
+            if (now - lastTouchTime <= 280) {
+                if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
+                    event.preventDefault();
+                }
+            }
+            lastTouchTime = now;
+        }, { passive: false });
+
+        // 6. Prevent Double-Click Zoom on Desktop / Laptop Touchpads
+        window.addEventListener('dblclick', (event) => {
+            if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
+                event.preventDefault();
+            }
+        }, { passive: false });
+    </script>
+</body>
+</html>
