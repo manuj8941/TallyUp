@@ -19,6 +19,19 @@ router.get( '/', ( req, res ) =>
     }
 } );
 
+// Login page alias
+router.get( '/login', ( req, res ) =>
+{
+    if ( req.session && req.session.user )
+    {
+        res.redirect( '/dashboard' );
+    }
+    else
+    {
+        res.sendFile( path.join( viewsDir, 'login.html' ) );
+    }
+} );
+
 // Profile page
 router.get( '/profile', requireLogin, ( req, res ) =>
 {

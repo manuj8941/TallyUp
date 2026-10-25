@@ -40,10 +40,12 @@ function checkIfDateIsOff ( date, callback )
                     const dow = m.day(); // 0=Sunday, 6=Saturday
 
                     // Mode mapping
+                    // 0 -> No weekly off (all days working)
                     // 1 -> All Sundays off
                     // 2 -> All Sundays and Saturdays off
                     // 3 -> All Sundays and (2nd & 4th Saturdays)
                     // 4 -> All Sundays and alternate Saturdays (1st,3rd,5th)
+                    if ( mode === '0' ) return callback( null, { off: false } );
                     if ( dow === 0 ) return callback( null, { off: true, type: 'weekly', mode } );
 
                     if ( dow === 6 )

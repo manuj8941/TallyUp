@@ -85,7 +85,7 @@
                     <p id="attendance-notice" aria-live="polite"
                         style="margin:0;padding:0;font-weight:normal;color:#333;"></p>
                 </div>
-                <video id="video" width="400" height="300" autoplay style="display: none;"></video>
+                <video id="video" width="400" height="300" autoplay playsinline muted style="display: none;"></video>
                 <canvas id="canvas" width="400" height="300" style="display: none;"></canvas>
                 <form id="attendance-form" method="post" style="display: none;">
                     <input type="hidden" id="latitude" name="latitude">
@@ -299,7 +299,7 @@
                 function resetIdleTimer ()
                 {
                     if ( idleTimer ) clearTimeout( idleTimer );
-                    idleTimer = setTimeout( () => { stopStream(); }, 5000 );
+                    idleTimer = setTimeout( () => { stopStream(); }, 60000 );
                 }
 
                 // Open camera on demand
@@ -328,6 +328,7 @@
                         } );
                         stream = s;
                         video.srcObject = stream;
+                        try { await video.play(); } catch ( playErr ) { console.warn( 'Video play warning:', playErr ); }
 
                         // Wait for first usable frame with longer timeout for mobile
                         await new Promise( resolve =>
@@ -399,7 +400,7 @@
                 {
                     if ( !dataUrl || typeof dataUrl !== 'string' ) return false;
                     // Simple length check (reject tiny images)
-                    if ( dataUrl.length < 5000 ) return false;
+                    if ( dataUrl.length < 1000 ) return false;
                     // Further pixel-sample test (optional, lightweight)
                     try
                     {
@@ -407,7 +408,7 @@
                         // synchronous canvas check: draw into canvas and sample pixels
                         // Since Image loads asynchronously, use a quick heuristic instead: ensure base64 payload exists
                         const base64 = dataUrl.split( ',' )[ 1 ] || '';
-                        if ( base64.length < 2000 ) return false;
+                        if ( base64.length < 800 ) return false;
                         return true;
                     } catch ( e ) { return true; }
                 }
@@ -726,7 +727,7 @@
                     if ( document.hidden )
                     {
                         if ( hiddenStopTimer ) clearTimeout( hiddenStopTimer );
-                        hiddenStopTimer = setTimeout( () => { stopStream(); }, 5000 );
+                        hiddenStopTimer = setTimeout( () => { stopStream(); }, 20000 );
                     } else
                     {
                         if ( hiddenStopTimer ) { clearTimeout( hiddenStopTimer ); hiddenStopTimer = null; }

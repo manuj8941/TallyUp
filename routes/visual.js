@@ -87,8 +87,8 @@ router.get( '/visual/data', requireLogin, async ( req, res ) =>
                 {
                     const m = moment( date, 'YYYY-MM-DD' );
                     const dow = m.day();
-                    if ( dow === 0 ) off = { off: true, type: 'weekly', mode: weeklyMode };
-                    else if ( dow === 6 )
+                    if ( weeklyMode !== '0' && dow === 0 ) off = { off: true, type: 'weekly', mode: weeklyMode };
+                    else if ( weeklyMode !== '0' && dow === 6 )
                     {
                         const dom = m.date();
                         const weekOfMonth = Math.floor( ( dom - 1 ) / 7 ) + 1;
