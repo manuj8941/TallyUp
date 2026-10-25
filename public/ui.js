@@ -416,21 +416,7 @@ document.addEventListener('click', (e) => {
   } catch (e) {}
 })();
 
-// --- 10. FLATPICKR INITIALIZATION ---
-document.addEventListener('DOMContentLoaded', function () {
-  if (typeof flatpickr !== 'undefined') {
-    flatpickr("input[type=date]", {
-      locale: { firstDayOfWeek: 1 },
-      disableMobile: true,
-      dateFormat: "Y-m-d",
-      altInput: true,
-      altFormat: "j-M-y",
-      allowInput: true
-    });
-  }
-});
-
-// --- 11. BOTTOM NAVIGATION COMPONENT (iOS 18 Glass Bar) ---
+// --- 10. BOTTOM NAVIGATION COMPONENT (iOS 18 Glass Bar) ---
 function initBottomNav(currentPage, userRole) {
   const navItems = {
     owner: [

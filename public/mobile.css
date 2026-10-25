@@ -330,6 +330,29 @@ input:focus, select:focus, textarea:focus {
     box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.2);
 }
 
+input[type=date] {
+    min-height: 44px;
+    font-weight: 600;
+}
+
+input[type=date]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(0.4);
+    opacity: 0.8;
+    transition: opacity 0.2s;
+    border-radius: 4px;
+}
+
+[data-theme="dark"] input[type=date]::-webkit-calendar-picker-indicator {
+    filter: invert(0.85);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) input[type=date]::-webkit-calendar-picker-indicator {
+        filter: invert(0.85);
+    }
+}
+
 /* =========================================================================
    APPLE SLIDING TOGGLE SWITCHES
    ========================================================================= */

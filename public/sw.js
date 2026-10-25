@@ -1,4 +1,4 @@
-const CACHE_NAME = 'attendance-v1';
+const CACHE_NAME = 'attendance-v2';
 const urlsToCache = [
     '/',
     '/login.html',
@@ -9,9 +9,6 @@ const urlsToCache = [
     '/appsettings.html',
     '/css/mobile.css',
     '/js/ui.js',
-    '/airbnb.css',
-    '/flatpickr.min.css',
-    '/flatpickr.min.js',
     '/default-avatar.svg',
     '/icons/icon-192.png',
     '/icons/icon-512.png'
