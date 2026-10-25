@@ -152,6 +152,59 @@
                 </div>
             </div>
 
+            <!-- Option A: Apple iOS 18 Day Detail Inspection Sheet -->
+            <div class="action-sheet-overlay" id="day-detail-sheet" onclick="if(event.target===this)closeSheet('day-detail-sheet')">
+                <div class="action-sheet-body" onclick="event.stopPropagation()">
+                    <div class="sheet-grabber"></div>
+                    <div class="sheet-title-row">
+                        <div>
+                            <div style="font-size:0.76rem; color:var(--muted); font-weight:700; text-transform:uppercase;">Attendance Inspection</div>
+                            <h3 id="sheet-day-title">Day Details</h3>
+                        </div>
+                        <button type="button" class="sheet-close-btn" onclick="closeSheet('day-detail-sheet')"><i class="fas fa-times"></i></button>
+                    </div>
+
+                    <div class="ios-inset-group" style="margin: 4px 0;">
+                        <div class="ios-row">
+                            <div class="ios-row-left">
+                                <div class="ios-icon-box" style="background:var(--ios-green);"><i class="fas fa-sign-in-alt"></i></div>
+                                <div>
+                                    <div class="row-title">Punch In Time</div>
+                                    <div class="row-subtitle" id="sheet-in-time">—</div>
+                                </div>
+                            </div>
+                            <span class="badge badge-green" id="sheet-status-badge">Present</span>
+                        </div>
+
+                        <div class="ios-row">
+                            <div class="ios-row-left">
+                                <div class="ios-icon-box" style="background:var(--ios-orange);"><i class="fas fa-sign-out-alt"></i></div>
+                                <div>
+                                    <div class="row-title">Punch Out Time</div>
+                                    <div class="row-subtitle" id="sheet-out-time">—</div>
+                                </div>
+                            </div>
+                            <strong style="font-size:0.9rem;" id="sheet-duration">—</strong>
+                        </div>
+
+                        <div class="ios-row">
+                            <div class="ios-row-left">
+                                <div class="ios-icon-box" style="background:var(--ios-blue);"><i class="fas fa-info-circle"></i></div>
+                                <div>
+                                    <div class="row-title">Status Details</div>
+                                    <div class="row-subtitle" id="sheet-details">—</div>
+                                </div>
+                            </div>
+                            <i class="fas fa-calendar-check" style="color:var(--accent);"></i>
+                        </div>
+                    </div>
+
+                    <button type="button" class="ios-primary-btn" onclick="closeSheet('day-detail-sheet')">
+                        Done
+                    </button>
+                </div>
+            </div>
+
             <!-- Spacer to ensure content clears bottom navbar -->
             <div class="bottom-spacer"></div>
 
@@ -341,36 +394,39 @@
                         el.className = `cal-day cal-status-${ info.status }`;
                         el.textContent = d; // Just the number, clean and simple
 
-                        // Interaction
+                        // Interaction (Option A Slide-up Sheet)
                         el.addEventListener( 'click', () =>
                         {
+                            if ( window.triggerHaptic ) triggerHaptic( 'medium' );
                             const title = formatDateFriendly( dateStr );
-                            const body = [];
-
-                            // Build details list
                             const statusPretty = info.status.charAt( 0 ).toUpperCase() + info.status.slice( 1 ).replace( '_', ' ' );
-                            body.push( `Status: ${ statusPretty }` );
+                            
+                            document.getElementById( 'sheet-day-title' ).textContent = title;
+                            document.getElementById( 'sheet-in-time' ).textContent = info.in_time || '—';
+                            document.getElementById( 'sheet-out-time' ).textContent = info.out_time || '—';
+                            document.getElementById( 'sheet-duration' ).textContent = info.total_time || ( info.status === 'present' ? 'Full Day' : '—' );
+                            
+                            const badge = document.getElementById( 'sheet-status-badge' );
+                            badge.textContent = statusPretty;
+                            badge.className = 'badge ' + ( info.status === 'present' ? 'badge-green' : ( info.status.includes( 'leave' ) ? 'badge-orange' : 'badge-red' ) );
 
-                            if ( info.in_time ) body.push( `In: ${ info.in_time }` );
-                            if ( info.out_time ) body.push( `Out: ${ info.out_time }` );
-                            if ( info.total_time ) body.push( `Total: ${ info.total_time }` );
+                            let details = statusPretty;
+                            if ( info.leave && info.leave.reason ) details += ` • ${ info.leave.reason }`;
+                            if ( info.holiday_name ) details += ` • ${ info.holiday_name }`;
+                            if ( info.adhoc_reason ) details += ` • ${ info.adhoc_reason }`;
+                            document.getElementById( 'sheet-details' ).textContent = details;
 
-                            if ( info.leave ) body.push( `Reason: ${ info.leave.reason || 'N/A' }` );
-                            if ( info.holiday_name ) body.push( `${ info.holiday_name }` );
-                            if ( info.adhoc_reason ) body.push( `${ info.adhoc_reason }` );
-
-                            // Use global modal
-                            if ( window.showAppModal )
-                            {
-                                // We can pass HTML to the modal if we join with <br>
-                                // But our basic modal expects text. Let's format it simply for now.
-                                // If you want HTML support, we'd update ui.js, but newline works for basic alerts.
-                                showAppModal( `${ title }\n\n${ body.map( l => l.replace( /<strong>|<\/strong>/g, '' ) ).join( '\n' ) }`, 'info' );
-                            }
+                            document.getElementById( 'day-detail-sheet' ).classList.add( 'open' );
                         } );
 
                         cal.appendChild( el );
                     }
+                }
+
+                function closeSheet(id) {
+                    if (window.triggerHaptic) triggerHaptic('light');
+                    const el = document.getElementById(id);
+                    if (el) el.classList.remove('open');
                 }
 
                 window.addEventListener( 'load', async () =>
